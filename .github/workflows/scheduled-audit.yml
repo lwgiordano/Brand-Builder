@@ -40,7 +40,7 @@ jobs:
       # instead of a silently-red cron run.
       - name: Open issue on audit failure
         if: failure()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             await github.rest.issues.create({
