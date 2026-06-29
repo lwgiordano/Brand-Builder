@@ -1,0 +1,60 @@
+[project]
+name = "programmatic-brand-builder"
+version = "0.0.0"
+description = "Project bootstrapped with Agent Substrate Kit v3"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "pre-commit>=3.7",
+  "pytest>=8",
+  "pytest-cov>=5",
+  "pytest-randomly>=3.15",
+  "pytest-rerunfailures>=14.0",
+  "hypothesis>=6.100",
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "bandit>=1.7",
+  "pip-audit>=2.7",
+  "PyYAML>=6",
+  "types-PyYAML>=6"
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# Substrate-owned dirs are governed by the substrate's OWN chain (check_python_syntax,
+# check_policy_code_integrity, harness/hook smoke, pytest) and use a deliberate, compact,
+# integrity-PINNED style. Ruff's job here is to lint YOUR project's code, not the vendored
+# substrate (scripts/, the kit's shipped tests/) — so those dirs are excluded; put your own
+# project code (and tests you want linted) outside them. (mypy already excludes scripts/.)
+# `--force-exclude` in run_python_gate.sh makes this bind even when pre-commit passes the
+# filenames explicitly.
+extend-exclude = ["scripts", "extras", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "C4"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*.py" = ["S603", "S607"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+explicit_package_bases = true
+exclude = ["scripts/", "build/", "dist/", "\\.venv/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-q", "--strict-markers", "--strict-config"]
+filterwarnings = ["default"]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 0

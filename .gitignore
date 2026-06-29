@@ -1,0 +1,15 @@
+docs/CURRENT_SESSION.md
+docs/.todo_state.json
+.substrate/memory/tasks/
+.substrate/traces/
+.substrate/venv/
+.substrate/dep_cooldown_cache.json
+ai/audits/*/audit-report.json
+__pycache__/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+node_modules/
+dist/
+build/

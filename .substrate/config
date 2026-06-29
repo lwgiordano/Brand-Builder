@@ -1,0 +1,11 @@
+# Written by bootstrap.sh; parsed as DATA by scripts/_substrate_config.sh.
+# Do NOT source this file as shell.
+SUBSTRATE_PROFILE="standard"
+SUBSTRATE_LANG="python"
+SUBSTRATE_RUNNER="auto"
+SUBSTRATE_SANDBOX="0"   # 1 = contain agent egress via scripts/sandbox_exec.sh (backend resolved from .substrate/sandbox.json)
+SUBSTRATE_REMOTE_GOVERNANCE="0"   # 1 = enforce remote governance (CODEOWNERS coverage + trusted-base authority); needs a GitHub remote
+LINT_CMD=""        # ruff runs via pre-commit
+TYPECHECK_CMD=""   # e.g. "uv run mypy src/"
+TEST_CMD=""        # pytest runs via pre-commit
+# SUBSTRATE_CODE_SUFFIXES=".rs,.kt"   # extend doc-drift code suffixes
