@@ -1,0 +1,65 @@
+[
+  {
+    "probe": "tab-stops-to-Generate-with-16-sources",
+    "stops": 70,
+    "reached": true
+  },
+  {
+    "probe": "evidence-truncation",
+    "eyebrow": "16 references",
+    "rowsShown": 6
+  },
+  {
+    "probe": "busy-race-generate-then-approve",
+    "samples": [
+      {
+        "generateDisabled": false,
+        "spinners": 0
+      },
+      {
+        "generateDisabled": false,
+        "spinners": 0
+      },
+      {
+        "generateDisabled": false,
+        "spinners": 0
+      },
+      {
+        "generateDisabled": false,
+        "spinners": 0
+      },
+      {
+        "generateDisabled": false,
+        "spinners": 0
+      },
+      {
+        "generateDisabled": false,
+        "spinners": 0
+      },
+      {
+        "generateDisabled": false,
+        "spinners": 0
+      },
+      {
+        "generateDisabled": false,
+        "spinners": 0
+      },
+      {
+        "generateDisabled": false,
+        "spinners": 0
+      },
+      {
+        "generateDisabled": false,
+        "spinners": 0
+      },
+      {
+        "generateDisabled": false,
+        "spinners": 0
+      },
+      {
+        "generateDisabled": false,
+        "spinners": 0
+      }
+    ]
+  }
+]

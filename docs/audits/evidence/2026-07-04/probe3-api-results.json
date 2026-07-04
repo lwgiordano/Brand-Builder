@@ -1,0 +1,36 @@
+{
+  "note": "Live API probe against the mirrored app (uvicorn, 127.0.0.1). Captured 2026-07-04.",
+  "upload_12_sources_ms_each": [56, 52, 51, 52, 53, 51, 52, 53, 54, 55, 56, 55],
+  "source_count_now": 16,
+  "version_before": 247,
+  "saveRaw_roundtrip_ms": [47, 44, 44],
+  "extract_codex_fallback": {
+    "ms": 32,
+    "status": 200,
+    "summary": "Analyzed source with deterministic extraction because the model was unavailable: codex CLI is not installed",
+    "rules": 4,
+    "confidence": null
+  },
+  "extract_claude_real": {
+    "ms": 45108,
+    "summary_prefix": "Analyzed source with deterministic extraction because the model was unavailable: Command '['/opt/node22/bin/claude', '-p', '--output-format', 'json', ...",
+    "rules": 4,
+    "patch_ops": 0,
+    "confidence": null,
+    "mode": "heuristic",
+    "observations": [
+      "provider reported available+authenticated by /api/status, yet the CLI invocation failed",
+      "45.1s with no progress, cancel, or timeout affordance in the UI",
+      "raw failed command line embedded into the user-facing proposal summary",
+      "confidence null renders as '0% confidence' in the proposal card",
+      "mode 'heuristic' (provenance) present in payload, never displayed"
+    ]
+  },
+  "apply_proposal": {
+    "ms": 88,
+    "status": 200,
+    "version_after": 249,
+    "rule_count_after": 43,
+    "observation": "one user-level apply moved version 247→249 (two internal snapshots); undo granularity != user actions"
+  }
+}
