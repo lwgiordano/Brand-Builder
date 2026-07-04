@@ -1,0 +1,626 @@
+{
+  "views": [
+    {
+      "view": "initial",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "count": 1,
+          "sample": [
+            {
+              "target": ".brand-pill > small",
+              "html": "<small>v234</small>",
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.23 (foreground color: #61706a, background color: #d8ece8, font size: 10.0pt (13.3333px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "help": "Select element must have an accessible name",
+          "count": 1,
+          "sample": [
+            {
+              "target": "select",
+              "html": "<select><option disabled=\"\" value=\"codex\">Codex</option><option value=\"claude\">Claude CLI</option></select>",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or r"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "view": "view-overview",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "count": 1,
+          "sample": [
+            {
+              "target": ".brand-pill > small",
+              "html": "<small>v234</small>",
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.23 (foreground color: #61706a, background color: #d8ece8, font size: 10.0pt (13.3333px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "help": "Select element must have an accessible name",
+          "count": 1,
+          "sample": [
+            {
+              "target": "select",
+              "html": "<select><option disabled=\"\" value=\"codex\">Codex</option><option value=\"claude\">Claude CLI</option></select>",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or r"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "view": "view-foundations",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "count": 1,
+          "sample": [
+            {
+              "target": ".brand-pill > small",
+              "html": "<small>v234</small>",
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.23 (foreground color: #61706a, background color: #d8ece8, font size: 10.0pt (13.3333px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "help": "Select element must have an accessible name",
+          "count": 1,
+          "sample": [
+            {
+              "target": "select",
+              "html": "<select><option disabled=\"\" value=\"codex\">Codex</option><option value=\"claude\">Claude CLI</option></select>",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or r"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "view": "view-surface-packs",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "count": 1,
+          "sample": [
+            {
+              "target": ".brand-pill > small",
+              "html": "<small>v234</small>",
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.23 (foreground color: #61706a, background color: #d8ece8, font size: 10.0pt (13.3333px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "help": "Select element must have an accessible name",
+          "count": 1,
+          "sample": [
+            {
+              "target": "select",
+              "html": "<select><option disabled=\"\" value=\"codex\">Codex</option><option value=\"claude\">Claude CLI</option></select>",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or r"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "view": "view-component-lab",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "count": 1,
+          "sample": [
+            {
+              "target": ".brand-pill > small",
+              "html": "<small>v234</small>",
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.23 (foreground color: #61706a, background color: #d8ece8, font size: 10.0pt (13.3333px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "help": "Select element must have an accessible name",
+          "count": 1,
+          "sample": [
+            {
+              "target": "select",
+              "html": "<select><option disabled=\"\" value=\"codex\">Codex</option><option value=\"claude\">Claude CLI</option></select>",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or r"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "view": "view-outputs",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "count": 1,
+          "sample": [
+            {
+              "target": ".brand-pill > small",
+              "html": "<small>v234</small>",
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.23 (foreground color: #61706a, background color: #d8ece8, font size: 10.0pt (13.3333px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "help": "Select element must have an accessible name",
+          "count": 1,
+          "sample": [
+            {
+              "target": "select",
+              "html": "<select><option disabled=\"\" value=\"codex\">Codex</option><option value=\"claude\">Claude CLI</option></select>",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or r"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "view": "view-validation",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "count": 1,
+          "sample": [
+            {
+              "target": ".brand-pill > small",
+              "html": "<small>v234</small>",
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.23 (foreground color: #61706a, background color: #d8ece8, font size: 10.0pt (13.3333px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "help": "Select element must have an accessible name",
+          "count": 1,
+          "sample": [
+            {
+              "target": "select",
+              "html": "<select><option disabled=\"\" value=\"codex\">Codex</option><option value=\"claude\">Claude CLI</option></select>",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or r"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "view": "30-1280",
+      "overflow": {
+        "docScrollW": 1280,
+        "innerW": 1280,
+        "horizOverflow": false
+      }
+    },
+    {
+      "view": "31-1024",
+      "overflow": {
+        "docScrollW": 1024,
+        "innerW": 1024,
+        "horizOverflow": false
+      }
+    },
+    {
+      "view": "32-768",
+      "overflow": {
+        "docScrollW": 768,
+        "innerW": 768,
+        "horizOverflow": false
+      }
+    },
+    {
+      "view": "33-375-mobile",
+      "overflow": {
+        "docScrollW": 375,
+        "innerW": 375,
+        "horizOverflow": false
+      }
+    }
+  ],
+  "keyboard": {
+    "stops": [
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Seed Brand Systemv234",
+        "outline": true,
+        "boxShadow": false,
+        "w": 247,
+        "h": 39
+      },
+      {
+        "tag": "summary",
+        "role": null,
+        "name": "Create brand",
+        "outline": true,
+        "boxShadow": false,
+        "w": 247,
+        "h": 23
+      },
+      {
+        "tag": "input",
+        "role": null,
+        "name": "",
+        "outline": true,
+        "boxShadow": false,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "tag": "input",
+        "role": null,
+        "name": "",
+        "outline": true,
+        "boxShadow": false,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "tag": "input",
+        "role": null,
+        "name": "",
+        "outline": true,
+        "boxShadow": false,
+        "w": 1,
+        "h": 1
+      },
+      {
+        "tag": "input",
+        "role": null,
+        "name": "https://brand.example/guidelines",
+        "outline": true,
+        "boxShadow": false,
+        "w": 167,
+        "h": 37
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Sdashboard design pattern catalogseed",
+        "outline": true,
+        "boxShadow": false,
+        "w": 229,
+        "h": 38
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Analyze dashboard design pattern catalog",
+        "outline": true,
+        "boxShadow": false,
+        "w": 32,
+        "h": 32
+      },
+      {
+        "tag": "summary",
+        "role": null,
+        "name": "Details",
+        "outline": true,
+        "boxShadow": false,
+        "w": 229,
+        "h": 23
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "FHilco Global Brand Guidelines[87].pdffile",
+        "outline": true,
+        "boxShadow": false,
+        "w": 229,
+        "h": 38
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Analyze Hilco Global Brand Guidelines[87].pdf",
+        "outline": true,
+        "boxShadow": false,
+        "w": 32,
+        "h": 32
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Delete Hilco Global Brand Guidelines[87].pdf",
+        "outline": true,
+        "boxShadow": false,
+        "w": 32,
+        "h": 32
+      },
+      {
+        "tag": "summary",
+        "role": null,
+        "name": "Details",
+        "outline": true,
+        "boxShadow": false,
+        "w": 229,
+        "h": 23
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "FQuick Reference Guide - Hilco Global Brand[5].pdffile",
+        "outline": true,
+        "boxShadow": false,
+        "w": 229,
+        "h": 38
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Analyze Quick Reference Guide - Hilco Global Brand[5].pdf",
+        "outline": true,
+        "boxShadow": false,
+        "w": 32,
+        "h": 32
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Delete Quick Reference Guide - Hilco Global Brand[5].pdf",
+        "outline": true,
+        "boxShadow": false,
+        "w": 32,
+        "h": 32
+      },
+      {
+        "tag": "summary",
+        "role": null,
+        "name": "Details",
+        "outline": true,
+        "boxShadow": false,
+        "w": 229,
+        "h": 23
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "IPv4 Logo - Light BG.svgfile",
+        "outline": true,
+        "boxShadow": false,
+        "w": 229,
+        "h": 38
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Analyze IPv4 Logo - Light BG.svg",
+        "outline": true,
+        "boxShadow": false,
+        "w": 32,
+        "h": 32
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Delete IPv4 Logo - Light BG.svg",
+        "outline": true,
+        "boxShadow": false,
+        "w": 32,
+        "h": 32
+      },
+      {
+        "tag": "summary",
+        "role": null,
+        "name": "Details",
+        "outline": true,
+        "boxShadow": false,
+        "w": 229,
+        "h": 23
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Generate",
+        "outline": true,
+        "boxShadow": false,
+        "w": 107,
+        "h": 32
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Overview",
+        "outline": true,
+        "boxShadow": false,
+        "w": 124,
+        "h": 38
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Foundations",
+        "outline": true,
+        "boxShadow": false,
+        "w": 124,
+        "h": 38
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Surface Packs",
+        "outline": true,
+        "boxShadow": false,
+        "w": 124,
+        "h": 38
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Component Lab",
+        "outline": true,
+        "boxShadow": false,
+        "w": 124,
+        "h": 38
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Outputs",
+        "outline": true,
+        "boxShadow": false,
+        "w": 124,
+        "h": 38
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Validation",
+        "outline": true,
+        "boxShadow": false,
+        "w": 124,
+        "h": 38
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Slides70%partial",
+        "outline": true,
+        "boxShadow": true,
+        "w": 115,
+        "h": 111
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Documents / PDF63%partial",
+        "outline": true,
+        "boxShadow": false,
+        "w": 115,
+        "h": 111
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Reports36%missing",
+        "outline": true,
+        "boxShadow": false,
+        "w": 115,
+        "h": 111
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Dashboards33%missing",
+        "outline": true,
+        "boxShadow": false,
+        "w": 115,
+        "h": 97
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Web61%partial",
+        "outline": true,
+        "boxShadow": false,
+        "w": 115,
+        "h": 97
+      },
+      {
+        "tag": "button",
+        "role": null,
+        "name": "Marketing43%partial",
+        "outline": true,
+        "boxShadow": false,
+        "w": 115,
+        "h": 97
+      },
+      {
+        "tag": "summary",
+        "role": null,
+        "name": "Rules",
+        "outline": true,
+        "boxShadow": false,
+        "w": 157,
+        "h": 23
+      },
+      {
+        "tag": "summary",
+        "role": null,
+        "name": "Rules",
+        "outline": true,
+        "boxShadow": false,
+        "w": 157,
+        "h": 23
+      },
+      {
+        "tag": "summary",
+        "role": null,
+        "name": "Rules",
+        "outline": true,
+        "boxShadow": false,
+        "w": 157,
+        "h": 23
+      },
+      {
+        "tag": "summary",
+        "role": null,
+        "name": "Rules",
+        "outline": true,
+        "boxShadow": false,
+        "w": 157,
+        "h": 23
+      },
+      {
+        "tag": "summary",
+        "role": null,
+        "name": "Rules",
+        "outline": true,
+        "boxShadow": false,
+        "w": 157,
+        "h": 23
+      },
+      {
+        "tag": "summary",
+        "role": null,
+        "name": "Rules",
+        "outline": true,
+        "boxShadow": false,
+        "w": 157,
+        "h": 23
+      }
+    ]
+  },
+  "meta": {
+    "baseURL": "http://127.0.0.1:8000",
+    "ts": "2026-07-03T14:52:22.507Z"
+  },
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "requestFailures": []
+}

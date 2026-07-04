@@ -1,0 +1,27 @@
+[
+  {
+    "probe": "toast-geometry-after-success",
+    "dockScrollHeight": 1541,
+    "dockClientHeight": 1541,
+    "toastTop": 1424.3125,
+    "viewportHeight": 900,
+    "toastInViewport": false,
+    "toastText": "Proposal ready for review"
+  },
+  {
+    "probe": "brand-switch",
+    "apiCalls": [
+      "GET /api/brands/seed",
+      "GET /api/status",
+      "GET /api/brands",
+      "GET /api/brands/seed"
+    ],
+    "providerBefore": "claude",
+    "providerAfter": "codex"
+  },
+  {
+    "probe": "delete-brand",
+    "nativeConfirmDialog": false,
+    "brandsAfter": 1
+  }
+]

@@ -488,7 +488,13 @@ and make the app's own a11y/e2e checks part of Operator Rule 1.
 
 ## 9. Evidence index
 
-Playwright captures (evidence/ and evidence-probe/, session scratchpad): `01-initial-1440`,
+A compact, re-checkable evidence bundle is committed at `docs/audits/evidence/2026-07-03/`:
+`playwright-axe-keyboard.json` (axe violations, 40-stop keyboard traversal with computed focus
+styles, reflow measurements), `probe-notes.json` / `probe2-notes.json` (error-flow toasts, toast
+geometry, brand-switch API traces, delete-dialog probes), and six annotated captures
+(workbench 1440, review-queue fallback state, foundations, validation, generated styleguide,
+generated slides). Full-resolution captures listed below lived in the audit session's scratchpad:
+`01-initial-1440`,
 `10-view-{overview,foundations,surface-packs,component-lab,outputs,validation}`,
 `20-focus-after-40-tabs`, `30-1280`/`31-1024`/`32-768`/`33-375-mobile` (reflow),
 `p1-extract-error-*` (proposal fallback + vertical chip), `p2-invalid-slug` (wiped form),
