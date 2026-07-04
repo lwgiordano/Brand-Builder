@@ -1,6 +1,6 @@
 docs/CURRENT_SESSION.md
 docs/.todo_state.json
-.substrate/memory/tasks/
+.substrate/memory/
 .substrate/traces/
 .substrate/venv/
 .substrate/dep_cooldown_cache.json
@@ -13,4 +13,3 @@ __pycache__/
 node_modules/
 dist/
 build/
-.substrate/memory/.lock
