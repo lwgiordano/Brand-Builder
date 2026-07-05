@@ -27,3 +27,9 @@ This file is `merge=union` in `.gitattributes` so concurrent branch entries comb
 **Intent:** Make the workbench responsive and clean per the operator's dashboard-design-patterns contract: token-based CSS, fixed shell with independent scroll, drawer dock, corner toasts with undo, typed-confirm brand delete, full keyboard/AT pass.
 **Knowledge:** Frontend now lives in-repo with knowledge-doc coverage. Verified live: axe 0 violations on all 6 stages (was 2/view incl 1 critical), no overflow 375-1440, undo-toast/typed-confirm/drawer probe-tested. Backend and brands remain in the Drive working copy. Phase-3 plan items (op queue, review sheet, AI composer, rule creation) still open.
 
+## 2026-07-05T05:13:26Z — NO_SESSION — 1053452
+**Summary:** CI-green closure signal: re-emit CI success as a PR comment for the watcher
+**Files:** .github/workflows/ci.yml,docs/knowledge/02_ci_green_signal.md
+**Intent:** Turn the polling convention into a mechanism: launder the un-forwarded CI-success state into a comment event the PR watcher receives, so it wakes once on green instead of polling on a timer.
+**Knowledge:** ci.yml checks job now posts a marker-tagged (<!-- ci-green-signal -->) SHA-stamped comment on same-repo PRs when all checks pass, delete-then-create so wake depends only on issue_comment.created. Watcher must ignore its own bot marker and dedupe on head SHA (guard doc 02) to avoid a comment->wake loop. Pushing this self-tests it: next green run on PR #4 should post one comment and wake the session once.
+
