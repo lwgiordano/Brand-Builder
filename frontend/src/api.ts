@@ -1,4 +1,12 @@
-import type { AiProposal, BrandMetadata, BrandPayload, JsonPatchOp, ProviderStatus, SourceRecord } from "./types";
+import type {
+  AiProposal,
+  BrandMetadata,
+  BrandPayload,
+  CompletionSummary,
+  JsonPatchOp,
+  ProviderStatus,
+  SourceRecord,
+} from "./types";
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -44,6 +52,10 @@ export function saveRaw(slug: string, brand: unknown): Promise<BrandPayload> {
 
 export function generate(slug: string): Promise<Omit<BrandPayload, "brand" | "completeness">> {
   return requestJson(`/api/brands/${slug}/generate`, { method: "POST" });
+}
+
+export function completeInventory(slug: string): Promise<BrandPayload & { completion: CompletionSummary }> {
+  return requestJson(`/api/brands/${slug}/inventory/complete`, { method: "POST" });
 }
 
 export function setRuleStatus(slug: string, ruleId: string, status: string): Promise<BrandPayload> {

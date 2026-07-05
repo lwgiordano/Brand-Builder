@@ -1,4 +1,4 @@
-import { CheckCircle2, ClipboardList, Loader2, RotateCcw, SlidersHorizontal, Sparkles, XCircle } from "lucide-react";
+import { CheckCircle2, ClipboardList, Loader2, Minus, Plus, RotateCcw, SlidersHorizontal, Sparkles, XCircle } from "lucide-react";
 import type {
   AiProposal,
   Brand,
@@ -7,11 +7,14 @@ import type {
   ProviderStatus,
   Rule,
   SourceRecord,
+  SpecPropValue,
   SurfacePack,
 } from "../types";
 import { rulesForComponent } from "../app/inventory";
 import { ComponentListField, REVIEW_STATUSES } from "./model";
+import { propLabel, propOptions, semanticRoles } from "./preview";
 import { Chip, Disclosure, Panel, statusTone } from "./primitives";
+import type { SpecSaveState } from "./WorkbenchApp";
 
 type EditorDockProps = {
   brand: Brand | null;
@@ -26,12 +29,14 @@ type EditorDockProps = {
   provider: string;
   busy: string | null;
   open: boolean;
+  specSaveState: SpecSaveState;
   onProviderChange: (provider: string) => void;
   onAnalyzeSource: (sourceId: string) => void;
   onApplyProposal: () => void;
   onRejectProposal: () => void;
   onUndo: () => void;
   onUpdateComponent: (componentId: string, patch: Partial<DesignComponent>) => void;
+  onUpdateComponentSpec: (componentId: string, prop: string, value: SpecPropValue) => void;
   onToggleComponentValue: (componentId: string, field: ComponentListField, value: string) => void;
   onSetRuleStatus: (ruleId: string, status: Rule["status"]) => void;
 };
@@ -49,12 +54,14 @@ export function EditorDock({
   provider,
   busy,
   open,
+  specSaveState,
   onProviderChange,
   onAnalyzeSource,
   onApplyProposal,
   onRejectProposal,
   onUndo,
   onUpdateComponent,
+  onUpdateComponentSpec,
   onToggleComponentValue,
   onSetRuleStatus,
 }: EditorDockProps) {
@@ -152,8 +159,42 @@ export function EditorDock({
         </Panel>
       ) : null}
 
+      {brand && selectedComponent?.spec ? (
+        <Panel title="Design" eyebrow={specSaveLabel(specSaveState, selectedComponent.name)}>
+          <div className="design-controls" data-design-controls>
+            <p className="panel-hint">
+              Changes show in the example right away and save on their own.
+            </p>
+            {Object.entries(selectedComponent.spec.props)
+              .filter(([, value]) => typeof value === "number")
+              .map(([key, value]) => (
+                <SpecStepper
+                  key={key}
+                  label={propLabel(key)}
+                  options={propOptions(brand, key)}
+                  unit={key === "font_weight" ? "" : "px"}
+                  value={value as number}
+                  onChange={(next) => onUpdateComponentSpec(selectedComponent.id, key, next)}
+                />
+              ))}
+            {Object.entries(selectedComponent.spec.props)
+              .filter(([, value]) => typeof value === "string")
+              .map(([key, value]) => (
+                <SwatchSelect
+                  colors={brand.tokens.colors}
+                  key={key}
+                  label={propLabel(key)}
+                  roles={semanticRoles(brand)}
+                  value={value as string}
+                  onChange={(role) => onUpdateComponentSpec(selectedComponent.id, key, role)}
+                />
+              ))}
+          </div>
+        </Panel>
+      ) : null}
+
       {selectedComponent ? (
-        <Panel title="Compact Editor" eyebrow={selectedComponent.name}>
+        <Panel title="Component Details" eyebrow={selectedComponent.name}>
           <div className="component-editor" data-component-compact-editor>
             <div className="status-picker">
               {REVIEW_STATUSES.map((status) => (
@@ -290,6 +331,105 @@ export function EditorDock({
 
 function pluralize(count: number, singular: string, plural?: string): string {
   return `${count} ${count === 1 ? singular : (plural ?? `${singular}s`)}`;
+}
+
+function specSaveLabel(state: SpecSaveState, componentName: string): string {
+  if (state === "pending" || state === "saving") return `${componentName} — saving…`;
+  if (state === "saved") return `${componentName} — saved`;
+  if (state === "error") return `${componentName} — couldn't save`;
+  return componentName;
+}
+
+function SpecStepper({
+  label,
+  value,
+  options,
+  unit,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  options: number[];
+  unit: string;
+  onChange: (value: number) => void;
+}) {
+  const step = (direction: 1 | -1) => {
+    const sorted = [...options].sort((a, b) => a - b);
+    if (direction > 0) {
+      const next = sorted.find((option) => option > value);
+      if (next !== undefined) onChange(next);
+      return;
+    }
+    const lower = sorted.filter((option) => option < value);
+    if (lower.length) onChange(lower[lower.length - 1]);
+  };
+  const sorted = [...options].sort((a, b) => a - b);
+  const atMin = value <= sorted[0];
+  const atMax = value >= sorted[sorted.length - 1];
+  return (
+    <div className="spec-stepper">
+      <span className="stepper-label">{label}</span>
+      <div className="stepper-controls">
+        <button
+          aria-label={`Make ${label.toLowerCase()} smaller`}
+          className="stepper-button"
+          disabled={atMin}
+          type="button"
+          onClick={() => step(-1)}
+        >
+          <Minus size={14} />
+        </button>
+        <output className="stepper-value">
+          {value}
+          {unit}
+        </output>
+        <button
+          aria-label={`Make ${label.toLowerCase()} bigger`}
+          className="stepper-button"
+          disabled={atMax}
+          type="button"
+          onClick={() => step(1)}
+        >
+          <Plus size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SwatchSelect({
+  label,
+  value,
+  roles,
+  colors,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  roles: string[];
+  colors: Record<string, string>;
+  onChange: (role: string) => void;
+}) {
+  return (
+    <div className="swatch-select">
+      <span className="stepper-label">{label}</span>
+      <div aria-label={label} className="swatch-row" role="group">
+      {roles.map((role) => (
+          <button
+            aria-label={`${label}: use the ${role} color`}
+            aria-pressed={role === value}
+            className={`swatch-button${role === value ? " is-selected" : ""}`}
+            key={role}
+            style={{ background: colors[role] }}
+            title={role}
+            type="button"
+            onClick={() => onChange(role)}
+          />
+        ))}
+      </div>
+      <span className="swatch-current">{value}</span>
+    </div>
+  );
 }
 
 function ChipEditor({

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   addUrl,
   applyDrafts,
+  completeInventory,
   createBrand,
   deleteBrand,
   deleteSource,
@@ -22,9 +23,11 @@ import type {
   Brand,
   BrandMetadata,
   BrandPayload,
+  CompletionSummary,
   DesignComponent,
   ProviderStatus,
   Rule,
+  SpecPropValue,
 } from "../types";
 import { EditorDock } from "./EditorDock";
 import { InputLibrary } from "./InputLibrary";
@@ -40,6 +43,9 @@ type Toast = {
 };
 
 const SUCCESS_TOAST_MS = 6000;
+const SPEC_SAVE_DEBOUNCE_MS = 700;
+
+export type SpecSaveState = "idle" | "pending" | "saving" | "saved" | "error";
 
 export function WorkbenchApp() {
   const [brands, setBrands] = useState<BrandMetadata[]>([]);
@@ -57,8 +63,13 @@ export function WorkbenchApp() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [dockOpen, setDockOpen] = useState(false);
   const [deleteCandidate, setDeleteCandidate] = useState<BrandMetadata | null>(null);
+  const [specSaveState, setSpecSaveState] = useState<SpecSaveState>("idle");
   const toastId = useRef(0);
   const toastTimers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  const payloadRef = useRef<BrandPayload | null>(null);
+  const specSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const specEditSeq = useRef(0);
+  payloadRef.current = payload;
 
   const brand = payload?.brand ?? null;
   const inventory = useMemo(
@@ -190,6 +201,13 @@ export function WorkbenchApp() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [dockOpen]);
 
+  useEffect(
+    () => () => {
+      if (specSaveTimer.current) clearTimeout(specSaveTimer.current);
+    },
+    [],
+  );
+
   async function runBusy<T>(
     key: string,
     action: () => Promise<T>,
@@ -217,7 +235,10 @@ export function WorkbenchApp() {
   }
 
   function selectBrand(slug: string) {
-    void runBusy(`brand:${slug}`, () => loadBrandPayload(slug));
+    void runBusy(`brand:${slug}`, async () => {
+      await flushPendingSpecSave();
+      await loadBrandPayload(slug);
+    });
   }
 
   function handleCreateBrand(slug: string, name: string) {
@@ -417,6 +438,75 @@ export function WorkbenchApp() {
     );
   }
 
+  function handleCompleteSystem() {
+    if (!brand) return;
+    void runBusy("complete-system", async () => {
+      const result = await completeInventory(brand.metadata.slug);
+      setPayload(result);
+      pushToast({ kind: "success", text: completionMessage(result.completion) });
+    });
+  }
+
+  // Spec edits are optimistic: the preview repaints immediately, and the save
+  // is debounced. A sequence counter guards against a slow response clobbering
+  // newer local edits.
+  function handleUpdateComponentSpec(componentId: string, prop: string, value: SpecPropValue) {
+    specEditSeq.current += 1;
+    setSpecSaveState("pending");
+    setPayload((current) => {
+      if (!current) return current;
+      const nextInventory = getDesignInventory(current.brand, current.completeness);
+      nextInventory.components = nextInventory.components.map((component) =>
+        component.id === componentId
+          ? {
+              ...component,
+              spec: {
+                preview: component.spec?.preview ?? "generic",
+                props: { ...(component.spec?.props ?? {}), [prop]: value },
+              },
+            }
+          : component,
+      );
+      return { ...current, brand: cloneBrandWithInventory(current.brand, nextInventory) };
+    });
+    if (specSaveTimer.current) clearTimeout(specSaveTimer.current);
+    specSaveTimer.current = setTimeout(() => {
+      specSaveTimer.current = null;
+      void flushSpecSave();
+    }, SPEC_SAVE_DEBOUNCE_MS);
+  }
+
+  async function flushSpecSave(): Promise<void> {
+    const current = payloadRef.current;
+    if (!current) return;
+    const seq = specEditSeq.current;
+    setSpecSaveState("saving");
+    try {
+      const next = await saveRaw(current.brand.metadata.slug, current.brand);
+      if (specEditSeq.current === seq) {
+        setPayload(next);
+        setSpecSaveState("saved");
+      } else if (!specSaveTimer.current) {
+        // Newer edits arrived while saving; save again shortly.
+        specSaveTimer.current = setTimeout(() => {
+          specSaveTimer.current = null;
+          void flushSpecSave();
+        }, SPEC_SAVE_DEBOUNCE_MS);
+      }
+    } catch (err) {
+      setSpecSaveState("error");
+      pushToast({ kind: "failure", text: errorMessage(err) });
+    }
+  }
+
+  async function flushPendingSpecSave(): Promise<void> {
+    if (specSaveTimer.current) {
+      clearTimeout(specSaveTimer.current);
+      specSaveTimer.current = null;
+      await flushSpecSave();
+    }
+  }
+
   return (
     <div className="lab-shell" data-creative-brand-lab>
       <a className="skip-link" href="#canvas">
@@ -458,6 +548,7 @@ export function WorkbenchApp() {
           setSelectedPackId(packId);
           setActiveStage("surface-packs");
         }}
+        onCompleteSystem={handleCompleteSystem}
         onSelectRule={(ruleId) => setSelectedRuleId(ruleId)}
         onSetRuleStatus={handleSetRuleStatus}
         onStageChange={setActiveStage}
@@ -490,10 +581,12 @@ export function WorkbenchApp() {
           setProposal(null);
           pushToast({ kind: "success", text: "Proposal rejected — nothing changed" });
         }}
+        specSaveState={specSaveState}
         onSetRuleStatus={handleSetRuleStatus}
         onToggleComponentValue={handleToggleComponentValue}
         onUndo={handleUndo}
         onUpdateComponent={handleUpdateComponent}
+        onUpdateComponentSpec={handleUpdateComponentSpec}
       />
 
       <div className="toast-layer">
@@ -601,4 +694,18 @@ function DeleteBrandDialog({
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function completionMessage(completion: CompletionSummary): string {
+  const parts: string[] = [];
+  if (completion.components_added) {
+    parts.push(`${completion.components_added} new component${completion.components_added === 1 ? "" : "s"}`);
+  }
+  if (completion.rules_added) {
+    parts.push(`${completion.rules_added} new rule${completion.rules_added === 1 ? "" : "s"}`);
+  }
+  if (!parts.length) {
+    return "Your system is already complete — nothing was missing.";
+  }
+  return `Added ${parts.join(" and ")}. Everything a full design system needs is now in place.`;
 }

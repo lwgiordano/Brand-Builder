@@ -949,6 +949,14 @@ button.lab-chip:hover {
   background: var(--danger);
 }
 
+.status-partial {
+  background: var(--warning);
+}
+
+.status-missing {
+  background: var(--text-faint);
+}
+
 /* ————— brand preview ————— */
 
 .brand-preview {
@@ -1650,6 +1658,310 @@ button.lab-chip:hover {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* ————— component lab canvas ————— */
+
+.panel-hint {
+  margin: 0 0 var(--s-3);
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+  max-width: 52ch;
+}
+
+.lab-layout {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: var(--s-4);
+  align-items: start;
+}
+
+.component-rail {
+  display: grid;
+  gap: var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  padding: var(--s-3);
+  max-height: 640px;
+  overflow-y: auto;
+}
+
+.rail-hint {
+  margin: 0;
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.rail-group {
+  display: grid;
+  gap: 2px;
+}
+
+.rail-group h3 {
+  margin: var(--s-2) 0 var(--s-1);
+  font-size: var(--t-caption);
+  font-weight: var(--w-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.rail-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  min-height: 32px;
+  padding: var(--s-1) var(--s-2);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--t-caption);
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+
+.rail-item::after {
+  content: "";
+  position: absolute;
+  inset: -2px 0;
+}
+
+.rail-item:hover {
+  background: var(--surface-muted);
+}
+
+.rail-item.is-selected {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  font-weight: var(--w-semibold);
+}
+
+.lab-canvas-region {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.lab-canvas-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.lab-canvas-head h3 {
+  margin: 0 0 2px;
+  font-size: var(--t-title);
+}
+
+.lab-canvas-head p {
+  margin: 0;
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+  max-width: 48ch;
+}
+
+.lab-canvas-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-shrink: 0;
+}
+
+.lab-canvas {
+  display: grid;
+  place-items: center;
+  min-height: 320px;
+  padding: var(--s-5);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background-color: var(--surface);
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 16px 16px;
+  overflow: hidden;
+}
+
+.component-preview {
+  margin: 0;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.preview-body {
+  display: grid;
+  justify-items: start;
+  max-width: 100%;
+}
+
+.preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.preview-col {
+  display: grid;
+  gap: var(--s-3);
+  justify-items: start;
+}
+
+.preview-scale {
+  overflow: hidden;
+  max-width: 100%;
+  border-radius: var(--r-lg);
+}
+
+.lab-canvas-meta {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.rule-strip-label {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+  margin-right: var(--s-2);
+}
+
+/* ————— design controls (inspector) ————— */
+
+.design-controls {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.spec-stepper,
+.swatch-select {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.stepper-label {
+  font-size: var(--t-caption);
+  color: var(--text);
+}
+
+.stepper-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+
+.stepper-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  position: relative;
+}
+
+.stepper-button::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+
+.stepper-button:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--surface-muted);
+}
+
+.stepper-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.stepper-value {
+  min-width: 52px;
+  text-align: center;
+  font-size: var(--t-caption);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.swatch-select {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.swatch-button {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+}
+
+/* Halo stays inside half the gap so neighbouring swatches never overlap. */
+.swatch-button::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+
+.swatch-button.is-selected {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--accent);
+}
+
+.swatch-current {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+/* ————— output thumbnails ————— */
+
+.output-thumb {
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--surface-muted);
+}
+
+.output-thumb iframe {
+  width: 400%;
+  height: 400%;
+  border: 0;
+  transform: scale(0.25);
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+@media (min-width: 1261px) {
+  .lab-open-dock {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .lab-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .component-rail {
+    max-height: 240px;
   }
 }
 

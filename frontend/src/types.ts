@@ -86,6 +86,13 @@ export type SurfacePack = {
   required?: boolean;
 };
 
+export type SpecPropValue = number | string | boolean;
+
+export type ComponentSpec = {
+  preview: string;
+  props: Record<string, SpecPropValue>;
+};
+
 export type DesignComponent = {
   id: string;
   name: string;
@@ -100,6 +107,15 @@ export type DesignComponent = {
   examples?: string[];
   status: InventoryStatus;
   evidence_refs?: string[];
+  spec?: ComponentSpec;
+};
+
+export type CompletionSummary = {
+  components_added: number;
+  specs_filled: number;
+  rules_added: number;
+  components_total: number;
+  rules_total: number;
 };
 
 export type DesignOutput = {
@@ -189,6 +205,7 @@ export type ValidationResult = {
 export type Artifacts = {
   slides: string;
   styleguide: string;
+  landing?: string;
   computed: string;
   report: string;
 };

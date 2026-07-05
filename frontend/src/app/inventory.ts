@@ -156,6 +156,15 @@ const DEFAULT_OUTPUTS: DesignOutput[] = [
     description: "Generated visual styleguide supported today.",
   },
   {
+    id: "landing",
+    label: "Landing Page",
+    type: "web",
+    surface_pack_id: "web",
+    status: "available",
+    artifact_key: "landing",
+    description: "Generated landing page assembled from your components.",
+  },
+  {
     id: "computed",
     label: "Computed Tokens",
     type: "data",

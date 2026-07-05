@@ -69,11 +69,12 @@
         "frontend/src/workbench/SystemCanvas.tsx",
         "frontend/src/workbench/WorkbenchApp.tsx",
         "frontend/src/workbench/model.ts",
+        "frontend/src/workbench/preview.tsx",
         "frontend/src/workbench/primitives.tsx",
         "frontend/src/workbench.css",
         "vite.config.ts"
       ],
-      "last_human_reviewed": "2026-07-04",
+      "last_human_reviewed": "2026-07-05",
       "path": "docs/knowledge/01_brand_system_studio_frontend.md",
       "purpose": "brand-system-studio-frontend"
     },

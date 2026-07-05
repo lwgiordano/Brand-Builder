@@ -1,6 +1,6 @@
 ---
 purpose: brand-system-studio-frontend
-last_human_reviewed: 2026-07-04
+last_human_reviewed: 2026-07-05
 covers:
   - frontend/src/api.ts
   - frontend/src/app/inventory.ts
@@ -14,6 +14,7 @@ covers:
   - frontend/src/workbench/SystemCanvas.tsx
   - frontend/src/workbench/WorkbenchApp.tsx
   - frontend/src/workbench/model.ts
+  - frontend/src/workbench/preview.tsx
   - frontend/src/workbench/primitives.tsx
   - frontend/src/workbench.css
   - vite.config.ts
@@ -50,7 +51,8 @@ The UI follows the dashboard design contract (`dashboard-design-patterns` agent 
   (real `<button class="card-hit">` in the card title, no `role` on containers, nested controls
   stack above the hit overlay); all file inputs, the provider select, meters
   (`role="meter"` + value), and icon buttons carry accessible names; verified **axe-core clean
-  (0 violations)** across all six stages at the 2026-07-04 rebuild.
+  (0 violations)** across all six stages at the 2026-07-04 rebuild and again across the
+  2026-07-05 Component Lab v2 views.
 - **Honest data details.** Provider select defaults to the first *available+authenticated*
   provider and survives brand switches (boot effect runs once; brand loads go through
   `selectBrand`); proposal counts pluralize; `confidence: null` renders as provenance
@@ -59,14 +61,47 @@ The UI follows the dashboard design contract (`dashboard-design-patterns` agent 
   the spacing ruler is proportional to the largest step; output cards downgrade to a warn tone
   with "N checks failing" when validation fails; metric supporting text derives from data.
 
+## Design-system pipeline v1 (2026-07-05)
+
+The workbench is now the front half of a settings → rules → components → end-products pipeline.
+The backend contract it depends on (Drive working copy `src/brandkit/`): `catalog.py` defines
+the full ~38-component catalog (Material-design breadth mapped to the six surface packs), a
+parametric `spec` per component derived from brand tokens, and ~10 baseline contract rules;
+`POST /api/brands/{slug}/inventory/complete` fills anything missing (idempotent — a no-op call
+does not bump the version); brand creation auto-completes; `generate/landing.py` renders a
+third HTML end product whose CTA/cards/KPIs are styled from the component specs; and
+`computed.py` derives `control_height_px`, `hit_target_px`, and CTA-contrast metrics **from the
+Buttons component spec**, so component edits flow directly into validation results.
+
+Frontend guarantees on top of that contract:
+
+- **Component Lab is a canvas, not a card grid.** A grouped component rail (categories in
+  `COMPONENT_CATEGORY_ORDER`, stored user data always wins over catalog defaults) selects into
+  a dotted canvas that renders a **live example** via `workbench/preview.tsx` — one renderer
+  per spec `preview` kind (~26 kinds + generic anatomy fallback), all styled inline from brand
+  tokens + spec props, exposed to AT as a single labelled `role="img"` figure with no fake
+  interactive controls inside.
+- **Figma-like editing with plain words.** The Editor Dock's "Design" panel renders a snapped
+  stepper per numeric spec prop (scale lists per prop kind in `propOptions`) and a color-role
+  swatch select per string prop (semantic roles only, `source_*` hidden). Labels come from
+  `propLabel` ("Corner roundness", "Extra tap area") — no CSS vocabulary.
+- **Optimistic, debounced persistence.** Spec edits repaint the preview immediately, then save
+  via `saveRaw` after a 700 ms debounce; a sequence counter discards stale server responses so
+  fast edits never get clobbered; pending edits flush before brand switches; save state is
+  surfaced in the panel eyebrow ("saving… / saved / couldn't save").
+- **Previews update with edits.** Output cards embed scaled, `inert` iframe thumbnails of every
+  HTML artifact (slides, styleguide, landing), cache-busted by brand version, so each save
+  visibly refreshes the end products; "Complete my system" (Overview) reports real counts from
+  the completion endpoint or an honest "already complete".
+
 ## Known deferred work
 
 The 2026-07-04 restructuring plan (`docs/audits/2026-07-04-workbench-restructuring-plan.md`)
-Phase 3 items are not yet implemented: operation-queue status cell (busy is still a single
-string), review-sheet change list, provider preflight ping, AI composer, rule creation, and the
-segmented workflow control (the component status picker still offers coverage words as manual
-choices). `model.ts` still exports the unused `SOURCE_ACTIONS`, and `app/rules.ts`
-(`createBlankRule`) remains uncalled until rule creation lands.
+Phase 3 items still open: operation-queue status cell (busy is still a single string),
+review-sheet change list, provider preflight ping, AI composer, and rule creation
+(`app/rules.ts` `createBlankRule` remains uncalled). `model.ts` still exports the unused
+`SOURCE_ACTIONS`. Pipeline v1 defers: PPTX/PDF binary export, Mobbin API integration, freeform
+drag-canvas editing, and per-variant/per-state spec overrides (one spec per component today).
 
 ## Operator rules
 
@@ -75,3 +110,6 @@ choices). `model.ts` still exports the unused `SOURCE_ACTIONS`, and `app/rules.t
 2. The Drive working copy's knowledge doc (`01_brand_system_studio.md`) still describes the
    pre-rebuild UI (buried toasts, unconfirmed deletes); this doc supersedes it for the frontend
    until the working copy is re-synced from this branch.
+3. The backend layout-contract test (`tests/test_frontend_layout_contract.py`, working copy)
+   asserts the 2026-07 contract: `100dvh` shell, 1260/900 breakpoints, reduced-motion guard,
+   canvas-first stacking. Update it in the same change as any breakpoint change.

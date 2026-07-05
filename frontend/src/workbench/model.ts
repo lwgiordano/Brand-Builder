@@ -41,7 +41,7 @@ export const STAGES: StageDefinition[] = [
   {
     id: "component-lab",
     label: "Component Lab",
-    description: "Reusable design elements with states, variants, rules, and evidence.",
+    description: "Pick a piece of your system, see a live example, and shape it with simple controls.",
     Icon: FlaskConical,
   },
   {
@@ -68,3 +68,29 @@ export const SOURCE_ACTIONS = [
   { id: "spec", label: "Specs", Icon: FolderOpen },
   { id: "logo", label: "Logo", Icon: CheckCircle2 },
 ] as const;
+
+export const COMPONENT_CATEGORY_ORDER = [
+  "foundation",
+  "identity",
+  "control",
+  "navigation",
+  "feedback",
+  "containment",
+  "component",
+  "data",
+  "content",
+  "surface",
+] as const;
+
+export const COMPONENT_CATEGORY_LABELS: Record<string, string> = {
+  foundation: "Foundations",
+  identity: "Identity",
+  control: "Controls",
+  navigation: "Navigation",
+  feedback: "Feedback",
+  containment: "Containers",
+  component: "Building blocks",
+  data: "Data",
+  content: "Content blocks",
+  surface: "Full surfaces",
+};
