@@ -1713,7 +1713,7 @@ button.lab-chip:hover {
   align-items: center;
   gap: var(--s-2);
   width: 100%;
-  min-height: 32px;
+  min-height: 36px;
   padding: var(--s-1) var(--s-2);
   border: 0;
   border-radius: var(--r-sm);
@@ -1725,10 +1725,11 @@ button.lab-chip:hover {
   position: relative;
 }
 
+/* 36px row + 4px halo each side = the 44px hit target. */
 .rail-item::after {
   content: "";
   position: absolute;
-  inset: -2px 0;
+  inset: -4px 0;
 }
 
 .rail-item:hover {
@@ -1912,7 +1913,11 @@ button.lab-chip:hover {
   padding: 0;
 }
 
-/* Halo stays inside half the gap so neighbouring swatches never overlap. */
+/* Documented dense-picker exception to the 44px hit-target rule: a palette
+   row can't give every swatch 44px without halos overlapping neighbours
+   (mis-taps are worse than small targets). 24px visible + 4px halo = 32px,
+   which meets WCAG 2.5.8 target-size minimum; the halo stays inside half
+   the 8px gap so adjacent targets never overlap. */
 .swatch-button::after {
   content: "";
   position: absolute;

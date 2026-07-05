@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import type { Brand, ComponentSpec, DesignComponent, SpecPropValue } from "../types";
 
@@ -142,9 +143,22 @@ export function ComponentPreview({ component, brand }: { component: DesignCompon
 }
 
 function Scale({ w, h, s, children, style }: { w: number; h: number; s: number; children: ReactNode; style?: CSSProperties }) {
+  // Fit-to-container: on narrow canvases the mock shrinks instead of cropping.
+  const ref = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(s);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width) setScale(Math.min(s, width / w));
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [w, s]);
   return (
-    <div className="preview-scale" style={{ width: w * s, height: h * s }}>
-      <div style={{ width: w, height: h, transform: `scale(${s})`, transformOrigin: "top left", ...style }}>
+    <div className="preview-scale" ref={ref} style={{ width: "100%", maxWidth: w * s, height: h * scale }}>
+      <div style={{ width: w, height: h, transform: `scale(${scale})`, transformOrigin: "top left", ...style }}>
         {children}
       </div>
     </div>
@@ -271,7 +285,7 @@ const RENDERERS: Record<string, Renderer> = {
       }}
     >
       Newest first
-      <span style={{ fontSize: 10 }}>▾</span>
+      <span style={{ fontSize: 12 }}>▾</span>
     </span>
   ),
   choices: (ctx) => {
@@ -1052,7 +1066,7 @@ const RENDERERS: Record<string, Renderer> = {
         {roles.map((name) => (
           <span key={name} style={{ display: "grid", gap: 4 }}>
             <span style={{ height: ctx.n("box_size", 48), borderRadius: ctx.n("radius", 8), background: ctx.brand.tokens.colors[name], border: `1px solid ${ctx.c("border", "border")}` }} />
-            <span style={{ fontSize: 11, color: ctx.brand.tokens.colors.muted }}>{name}</span>
+            <span style={{ fontSize: 12, color: ctx.brand.tokens.colors.muted }}>{name}</span>
           </span>
         ))}
       </div>
@@ -1067,7 +1081,7 @@ const RENDERERS: Record<string, Renderer> = {
             <span style={{ fontSize: Math.min(size, 40), color: ctx.c("text", "text"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               Brand voice
             </span>
-            <span style={{ fontSize: 11, color: ctx.brand.tokens.colors.muted, whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: 12, color: ctx.brand.tokens.colors.muted, whiteSpace: "nowrap" }}>
               {name} · {size}px
             </span>
           </span>

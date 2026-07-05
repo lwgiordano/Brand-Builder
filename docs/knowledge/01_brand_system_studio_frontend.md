@@ -84,7 +84,12 @@ Frontend guarantees on top of that contract:
 - **Figma-like editing with plain words.** The Editor Dock's "Design" panel renders a snapped
   stepper per numeric spec prop (scale lists per prop kind in `propOptions`) and a color-role
   swatch select per string prop (semantic roles only, `source_*` hidden). Labels come from
-  `propLabel` ("Corner roundness", "Extra tap area") — no CSS vocabulary.
+  `propLabel` ("Corner roundness", "Extra tap area") — no CSS vocabulary. **Hit-target
+  exception (documented):** swatch buttons in the dense palette row are 24px + 4px halo = 32px
+  effective — 44px halos would overlap neighbours and cause mis-taps; 24px visible satisfies
+  WCAG 2.5.8 target-size minimum. Everything else (steppers, rail items) reaches 44px via
+  halos. Scaled surface mocks (slide/page/shell/hero/drawer) fit-to-container via a
+  ResizeObserver in `Scale` so narrow canvases shrink the mock instead of cropping it.
 - **Optimistic, debounced persistence.** Spec edits repaint the preview immediately, then save
   via `saveRaw` after a 700 ms debounce; a sequence counter discards stale server responses so
   fast edits never get clobbered; pending edits flush before brand switches; save state is
