@@ -39,3 +39,9 @@ This file is `merge=union` in `.gitattributes` so concurrent branch entries comb
 **Intent:** Turn the workbench into a settings-to-end-products pipeline: brands auto-complete to Material-breadth rules+components with token-derived editable specs, a Figma-like canvas edits them in plain words, and previews (incl. a new landing artifact) update with every edit
 **Knowledge:** Backend contract lives in the Drive working copy (catalog.py, inventory/complete endpoint, landing.py, spec-driven metrics); specs merge stored-over-computed so user edits survive; hit-target/CTA-contrast checks read the Buttons spec, so lab edits flip validation; verified axe-0 and probe-proven end-to-end on 2026-07-05
 
+## 2026-07-05T22:44:53Z — NO_SESSION — 45aa299
+**Summary:** Design-auditor WARN findings fixed: fit-to-container preview mocks, 44px rail hit targets, 12px type floor in preview labels
+**Files:** frontend/src/workbench/preview.tsx,frontend/src/workbench.css,docs/knowledge/01_brand_system_studio_frontend.md
+**Intent:** Close the audit loop on pipeline v1: narrow canvases shrink scaled mocks instead of cropping, every rail item reaches the 44px target, and the dense swatch-picker 32px exception is documented rather than silent
+**Knowledge:** Scale() in preview.tsx observes its own width and clamps scale to width/w; swatch halos must stay inside half the gap (documented in workbench.css + knowledge doc); probe6_auditfix measured mock==canvas at 375px, rail hit 44px, axe clean
+
