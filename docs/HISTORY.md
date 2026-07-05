@@ -33,3 +33,9 @@ This file is `merge=union` in `.gitattributes` so concurrent branch entries comb
 **Intent:** Turn the polling convention into a mechanism: launder the un-forwarded CI-success state into a comment event the PR watcher receives, so it wakes once on green instead of polling on a timer.
 **Knowledge:** ci.yml checks job now posts a marker-tagged (<!-- ci-green-signal -->) SHA-stamped comment on same-repo PRs when all checks pass, delete-then-create so wake depends only on issue_comment.created. Watcher must ignore its own bot marker and dedupe on head SHA (guard doc 02) to avoid a comment->wake loop. Pushing this self-tests it: next green run on PR #4 should post one comment and wake the session once.
 
+## 2026-07-05T22:36:33Z — NO_SESSION — af0fa11
+**Summary:** Design-system pipeline v1: full component catalog auto-completion, canvas Component Lab with live spec editing, and generated landing page
+**Files:** frontend/src/workbench/preview.tsx,frontend/src/workbench/SystemCanvas.tsx,frontend/src/workbench/EditorDock.tsx,frontend/src/workbench/WorkbenchApp.tsx,frontend/src/workbench.css,frontend/src/types.ts,frontend/src/api.ts,frontend/src/app/inventory.ts,frontend/src/workbench/model.ts,docs/knowledge/01_brand_system_studio_frontend.md
+**Intent:** Turn the workbench into a settings-to-end-products pipeline: brands auto-complete to Material-breadth rules+components with token-derived editable specs, a Figma-like canvas edits them in plain words, and previews (incl. a new landing artifact) update with every edit
+**Knowledge:** Backend contract lives in the Drive working copy (catalog.py, inventory/complete endpoint, landing.py, spec-driven metrics); specs merge stored-over-computed so user edits survive; hit-target/CTA-contrast checks read the Buttons spec, so lab edits flip validation; verified axe-0 and probe-proven end-to-end on 2026-07-05
+
