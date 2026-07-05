@@ -43,6 +43,24 @@ The cost is two API calls instead of one. If a future probe confirms `edited` is
 forwarded, an edit variant becomes a safe micro-optimization; until then this
 design depends on nothing unproven.
 
+## Probe result (2026-07-05, confirmed end-to-end)
+
+Verified live on PR #4, head `62be5b7`: the `github-actions[bot]` green-signal
+comment **woke the watching session**, arriving through the webhook channel
+*before* a scheduled fallback check fired. Two facts established:
+
+- The harness **does not filter bot/self-authored comments** — a
+  `github-actions[bot]` comment is forwarded to the watcher, so the laundering
+  reaches it. (This was the real unknown; had it filtered bot comments, the
+  signal would need a non-bot identity — a PAT or a user-posting workflow.)
+- **Edge-driven closure works**: the watcher woke exactly once on green with no
+  timer poll. The hourly fallback poll is not needed for CI closure and was
+  retired.
+
+Because the design keys the wake on `issue_comment.created`, `edited`-forwarding
+was never exercised and remains unverified — intentionally, since nothing depends
+on it.
+
 ## The watcher guard (prevents the metronome)
 
 The watcher is subscribed to comment events, and this mechanism makes CI *post*
