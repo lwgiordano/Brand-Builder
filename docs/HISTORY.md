@@ -75,3 +75,9 @@ This file is `merge=union` in `.gitattributes` so concurrent branch entries comb
 **Intent:** User feedback on v4: still too confusing — wanted everything simpler and more visual, colors shown as examples, type the normal web way, rules plain and not overwhelming, component content in the components step, and per-component visual references plus AI revise options
 **Knowledge:** Backend now enriches every rule with label+description at load (rule_text.py) and guarantees sizes.h1/h2/h3 from body x scale_ratio; /ai/edit takes component_id with a deterministic per-component fallback so the describe box works offline; step 2 filters out component/data rule categories; ex-chip examples use solid fills with readableOn ink after a 375px axe contrast catch; backend suite 70 passing
 
+## 2026-07-06T17:30:36Z — NO_SESSION — 36dfe5f
+**Summary:** v5 design-audit fixes: dead CSS pruned, scene/state figcaptions aria-hidden, 12px decorative glyph floor, evidence re-shot to actually show the strip and proposal card
+**Files:** frontend/src/workbench.css,frontend/src/workbench/preview.tsx
+**Intent:** Close the v5 audit loop under the standing fix-and-reverify discipline; two confirmed findings (dead selectors, evidence gap) and two static-reasoning assumptions all addressed
+**Knowledge:** role=img figures keep captions visible but aria-hidden since the aria-label duplicates them; element screenshots beat viewport crops for below-the-fold evidence; probe reverts must restore measured baselines not assumed ones (drift-check script compares against the shipped staging copy)
+
