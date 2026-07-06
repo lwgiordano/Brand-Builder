@@ -60,7 +60,7 @@ export function SystemCanvas({
     <main className="system-canvas" aria-label="Brand pipeline" id="canvas" tabIndex={-1}>
       <header className="canvas-topbar">
         <div>
-          <p className="lab-eyebrow">Creative Brand Lab</p>
+          <p className="lab-eyebrow">Creative Brand Lab · v4</p>
           <h1>{brand.metadata.name}</h1>
           <span className="canvas-subtitle">From whatever you have to finished, on-brand designs.</span>
         </div>
