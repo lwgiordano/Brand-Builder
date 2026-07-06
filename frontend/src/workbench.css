@@ -196,7 +196,6 @@ pre {
 }
 
 .lab-panel-header h2,
-.stage-hero h2,
 .canvas-topbar h1,
 .component-card h3,
 .surface-pack-card h3,
@@ -736,28 +735,6 @@ button.lab-chip:hover {
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent-strong);
-}
-
-.stage-hero {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  color: var(--accent);
-  padding: var(--s-3) var(--s-4);
-}
-
-.stage-hero h2 {
-  font-size: var(--t-title);
-  font-weight: var(--w-semibold);
-}
-
-.stage-hero p {
-  margin: var(--s-1) 0 0;
-  color: var(--text-muted);
-  font-size: var(--t-body-sm);
 }
 
 .stage-grid {
@@ -1668,24 +1645,6 @@ button.lab-chip:hover {
   max-width: 52ch;
 }
 
-.lab-layout {
-  display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
-  gap: var(--s-4);
-  align-items: start;
-}
-
-.component-rail {
-  display: grid;
-  gap: var(--s-3);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  padding: var(--s-3);
-  max-height: 640px;
-  overflow-y: auto;
-}
-
 .rail-hint {
   margin: 0;
   font-size: var(--t-caption);
@@ -1959,12 +1918,165 @@ button.lab-chip:hover {
 }
 
 @media (max-width: 900px) {
-  .lab-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
 
-  .component-rail {
-    max-height: 240px;
+}
+
+/* ————— guided component review + pieces/exceptions ————— */
+
+.stage-heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-3);
+}
+
+.stage-heading h2 {
+  margin: 0;
+  font-size: var(--t-title);
+}
+
+.stage-heading p {
+  margin: 0;
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.review-topbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  padding: var(--s-3) var(--s-4);
+}
+
+.review-counter {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  white-space: nowrap;
+}
+
+.review-counter strong {
+  font-size: var(--t-body);
+}
+
+.review-progress {
+  display: flex;
+  gap: 2px;
+  flex: 1 1 160px;
+  min-width: 120px;
+  height: 6px;
+  align-items: stretch;
+}
+
+.review-progress .seg {
+  flex: 1;
+  min-width: 3px;
+  border-radius: 3px;
+  background: var(--border);
+}
+
+.review-progress .seg.is-done {
+  background: var(--accent);
+  opacity: 0.45;
+}
+
+.review-progress .seg.is-current {
+  background: var(--accent);
+}
+
+.review-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.jump-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--s-2) var(--s-4);
+  max-height: 320px;
+  overflow-y: auto;
+  padding: var(--s-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.review-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--s-4);
+  align-items: start;
+}
+
+.review-inspector {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.pieces-panel {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.piece-group {
+  display: grid;
+  gap: var(--s-2);
+  border-top: 1px solid var(--border);
+  padding-top: var(--s-3);
+}
+
+.piece-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+
+.piece-control.has-exception {
+  border-left: 3px solid var(--warning);
+  padding-left: var(--s-2);
+  border-radius: 2px;
+}
+
+.exception-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+/* 12px text + generous padding keeps the reset link at a 44px-tall target. */
+.reset-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  border: 0;
+  background: none;
+  padding: var(--s-3) var(--s-1);
+  font-size: var(--t-caption);
+  font-weight: var(--w-semibold);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+@media (max-width: 1260px) {
+  .review-body {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}
+
+@media (max-width: 900px) {
+  .review-body {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -2433,10 +2545,6 @@ button.lab-chip:hover {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto;
   gap: var(--s-2);
   align-items: end;
-}
-
-.complete-system {
-  justify-content: center;
 }
 
 @media (max-width: 900px) {

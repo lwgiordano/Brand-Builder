@@ -1,12 +1,10 @@
-import { Loader2, PanelRight, Play, ShieldCheck, Sparkles } from "lucide-react";
+import { Loader2, PanelRight, Play, ShieldCheck } from "lucide-react";
 import type { ComponentProps } from "react";
-import type { Brand, DesignComponent, Rule } from "../types";
-import { rulesForComponent } from "../app/inventory";
+import type { Brand } from "../types";
 import { BrandIntake } from "./BrandIntake";
+import { ComponentReview, type ComponentReviewProps } from "./ComponentReview";
 import { CreationStudio } from "./CreationStudio";
-import { COMPONENT_CATEGORY_LABELS, COMPONENT_CATEGORY_ORDER, STEPS, type StepId } from "./model";
-import { ComponentPreview } from "./preview";
-import { Chip, statusTone } from "./primitives";
+import { STEPS, type StepId } from "./model";
 import { StyleSettings } from "./StyleSettings";
 
 /**
@@ -23,7 +21,7 @@ type SystemCanvasProps = {
   checksFailing: number;
   intake: ComponentProps<typeof BrandIntake>;
   styleSettings: ComponentProps<typeof StyleSettings> | null;
-  lab: ComponentLabStageProps | null;
+  lab: ComponentReviewProps | null;
   studio: ComponentProps<typeof CreationStudio> | null;
   onStepChange: (step: StepId) => void;
   onGenerate: () => void;
@@ -111,135 +109,15 @@ export function SystemCanvas({
         ))}
       </nav>
 
-      <section className="stage-hero">
-        <selectedStep.Icon size={20} />
-        <div>
-          <h2>{selectedStep.label}</h2>
-          <p>{selectedStep.description}</p>
-        </div>
+      <section className="stage-heading">
+        <h2>{selectedStep.label}</h2>
+        <p>{selectedStep.description}</p>
       </section>
 
       {activeStep === "brand" ? <BrandIntake {...intake} /> : null}
       {activeStep === "style" && styleSettings ? <StyleSettings {...styleSettings} /> : null}
-      {activeStep === "components" && lab ? <ComponentLabStage {...lab} /> : null}
+      {activeStep === "components" && lab ? <ComponentReview {...lab} /> : null}
       {activeStep === "make" && studio ? <CreationStudio {...studio} /> : null}
     </main>
-  );
-}
-
-export type ComponentLabStageProps = {
-  brand: Brand;
-  components: DesignComponent[];
-  rules: Rule[];
-  selectedComponentId: string | null;
-  busy: string | null;
-  onOpenDock: () => void;
-  onSelectComponent: (componentId: string) => void;
-  onSelectRule: (ruleId: string) => void;
-  onCompleteSystem: () => void;
-};
-
-function ComponentLabStage({
-  brand,
-  components,
-  rules,
-  selectedComponentId,
-  busy,
-  onOpenDock,
-  onSelectComponent,
-  onSelectRule,
-  onCompleteSystem,
-}: ComponentLabStageProps) {
-  const selected =
-    components.find((component) => component.id === selectedComponentId) ?? components[0] ?? null;
-  const knownCategories: readonly string[] = COMPONENT_CATEGORY_ORDER;
-  const groups: { category: string; label: string; items: DesignComponent[] }[] =
-    COMPONENT_CATEGORY_ORDER.map((category) => ({
-      category: category as string,
-      label: COMPONENT_CATEGORY_LABELS[category] ?? category,
-      items: components.filter((component) => component.category === category),
-    })).filter((group) => group.items.length > 0);
-  const ungrouped = components.filter((component) => !knownCategories.includes(component.category));
-  if (ungrouped.length) {
-    groups.push({ category: "other", label: "More", items: ungrouped });
-  }
-  const linkedRules = selected ? rulesForComponent(selected, rules) : [];
-  return (
-    <div className="component-lab stage-grid" data-workbench-stage="Your components" data-compact-editor-marker>
-      <div className="lab-layout">
-        <nav aria-label="Components in this system" className="component-rail">
-          <button
-            className="ghost-action complete-system"
-            type="button"
-            onClick={onCompleteSystem}
-            disabled={busy === "complete-system"}
-          >
-            {busy === "complete-system" ? <Loader2 className="spin" size={15} /> : <Sparkles size={15} />}
-            Complete my system
-          </button>
-          <p className="rail-hint">Pick a piece. The example updates as you edit.</p>
-          {groups.map((group) => (
-            <section className="rail-group" key={group.category}>
-              <h3>{group.label}</h3>
-              {group.items.map((component) => (
-                <button
-                  aria-current={selected?.id === component.id ? "true" : undefined}
-                  className={`rail-item${selected?.id === component.id ? " is-selected" : ""}`}
-                  key={component.id}
-                  type="button"
-                  onClick={() => onSelectComponent(component.id)}
-                >
-                  <span className={`status-dot status-${component.status}`} />
-                  {component.name}
-                </button>
-              ))}
-            </section>
-          ))}
-        </nav>
-
-        {selected ? (
-          <section aria-label={`${selected.name} preview and details`} className="lab-canvas-region">
-            <header className="lab-canvas-head">
-              <div>
-                <h3>{selected.name}</h3>
-                <p>{selected.purpose}</p>
-              </div>
-              <div className="lab-canvas-actions">
-                <Chip tone={statusTone(selected.status)}>{selected.status}</Chip>
-                <button className="ghost-action lab-open-dock" type="button" onClick={onOpenDock}>
-                  Edit this
-                </button>
-              </div>
-            </header>
-            <div className="lab-canvas" data-component-canvas>
-              <ComponentPreview brand={brand} component={selected} />
-            </div>
-            <div className="lab-canvas-meta">
-              <div className="chip-row">
-                {selected.surfaces.map((surface) => (
-                  <Chip key={surface}>{surface}</Chip>
-                ))}
-              </div>
-              {linkedRules.length ? (
-                <div className="component-rule-strip">
-                  <span className="rule-strip-label">
-                    {linkedRules.length === 1 ? "1 rule watches this" : `${linkedRules.length} rules watch this`}
-                  </span>
-                  {linkedRules.slice(0, 6).map((rule) => (
-                    <button key={rule.id} type="button" onClick={() => onSelectRule(rule.id)}>
-                      {rule.label || rule.id}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </section>
-        ) : (
-          <section className="lab-canvas-region">
-            <div className="empty-hint">No components yet. Press “Complete my system” to fill them in.</div>
-          </section>
-        )}
-      </div>
-    </div>
   );
 }

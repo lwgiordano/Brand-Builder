@@ -777,6 +777,21 @@ export function WorkbenchApp() {
     editCreation((draft) => ({ ...draft, name }));
   }
 
+  // "Just this design": a whole-design exception keyed "<component_id>.<prop>".
+  // Passing null removes the exception (back to the system value).
+  function handleSetCreationException(componentId: string, prop: string, value: SpecPropValue | null) {
+    editCreation((draft) => {
+      const exceptions = { ...(draft.exceptions ?? {}) };
+      const key = `${componentId}.${prop}`;
+      if (value === null) {
+        delete exceptions[key];
+      } else {
+        exceptions[key] = value;
+      }
+      return { ...draft, exceptions };
+    });
+  }
+
   const saveStateLabel = saveLabel(specSaveState);
   const creationSaveLabel = saveLabel(creationSaveState);
 
@@ -819,17 +834,21 @@ export function WorkbenchApp() {
           brand && inventory
             ? {
                 brand,
+                inventory,
                 components: inventory.components,
                 rules: brand.rules,
                 selectedComponentId: selectedComponent?.id ?? null,
                 busy,
-                onOpenDock: () => setDockOpen(true),
+                specSaveState,
                 onSelectComponent: setSelectedComponentId,
                 onSelectRule: (ruleId) => {
                   setSelectedRuleId(ruleId);
                   setDockOpen(true);
                 },
                 onCompleteSystem: handleCompleteSystem,
+                onUpdateComponent: handleUpdateComponent,
+                onUpdateComponentSpec: handleUpdateComponentSpec,
+                onToggleComponentValue: handleToggleComponentValue,
               }
             : null
         }
@@ -890,6 +909,7 @@ export function WorkbenchApp() {
       />
       <EditorDock
         brand={brand}
+        brandSaveLabel={saveStateLabel}
         busy={busy}
         creation={activeStep === "make" ? activeCreation : null}
         creationSaveLabel={creationSaveLabel}
@@ -898,16 +918,13 @@ export function WorkbenchApp() {
         overrideChoices={library?.override_choices ?? {}}
         report={report}
         sectionSkeleton={activeStep === "make" ? sectionSkeleton : null}
-        selectedComponent={activeStep === "components" ? selectedComponent : null}
         selectedRule={selectedRule}
         selectedSection={activeStep === "make" ? selectedSection : null}
         sources={sources}
-        specSaveState={specSaveState}
         onSelectRule={setSelectedRuleId}
+        onSetCreationException={handleSetCreationException}
         onSetRuleStatus={handleSetRuleStatus}
-        onToggleComponentValue={handleToggleComponentValue}
         onUndo={handleUndo}
-        onUpdateComponent={handleUpdateComponent}
         onUpdateComponentSpec={handleUpdateComponentSpec}
         onUpdateSectionContent={handleUpdateSectionContent}
         onUpdateSectionOverride={handleUpdateSectionOverride}

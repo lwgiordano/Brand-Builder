@@ -1,26 +1,25 @@
-import { CheckCircle2, RotateCcw, ShieldCheck, SlidersHorizontal, Trash2 } from "lucide-react";
+import { CheckCircle2, RotateCcw, ShieldCheck, SlidersHorizontal, Trash2, Undo2 } from "lucide-react";
+import { useState } from "react";
 import type {
   Brand,
   Creation,
   CreationSection,
-  DesignComponent,
   DesignInventory,
   Rule,
   SkeletonDefinition,
   SourceRecord,
+  SpecPropValue,
   ValidationReport,
 } from "../types";
-import { rulesForComponent } from "../app/inventory";
 import { ChoiceChips, SpecStepper, SwatchSelect, TextField } from "./controls";
-import { ComponentListField, REVIEW_STATUSES } from "./model";
 import { propLabel, propOptions, semanticRoles } from "./preview";
 import { Chip, Disclosure, Panel, statusTone } from "./primitives";
-import type { SpecSaveState } from "./WorkbenchApp";
 
 /**
- * The right-hand inspector. Contextual panels: machine checks, the Design
- * controls for the selected component, the "This part" editor for the
- * selected section of a creation, rule details, evidence, and undo.
+ * The right-hand inspector. Component editing now lives beside the canvas in
+ * the walkthrough (step 3); the dock holds the cross-cutting panels — machine
+ * checks, the open design's part editor and system pieces (with whole-design
+ * exceptions), rule details, evidence, and undo.
  */
 
 type EditorDockProps = {
@@ -28,7 +27,6 @@ type EditorDockProps = {
   inventory: DesignInventory | null;
   sources: SourceRecord[];
   report: ValidationReport | null;
-  selectedComponent: DesignComponent | null;
   selectedRule: Rule | null;
   creation: Creation | null;
   selectedSection: CreationSection | null;
@@ -36,14 +34,13 @@ type EditorDockProps = {
   overrideChoices: Record<string, string[]>;
   busy: string | null;
   open: boolean;
-  specSaveState: SpecSaveState;
+  brandSaveLabel: string;
   creationSaveLabel: string;
   onUndo: () => void;
-  onUpdateComponent: (componentId: string, patch: Partial<DesignComponent>) => void;
-  onUpdateComponentSpec: (componentId: string, prop: string, value: number | string | boolean) => void;
-  onToggleComponentValue: (componentId: string, field: ComponentListField, value: string) => void;
   onSetRuleStatus: (ruleId: string, status: Rule["status"]) => void;
   onSelectRule: (ruleId: string) => void;
+  onUpdateComponentSpec: (componentId: string, prop: string, value: SpecPropValue) => void;
+  onSetCreationException: (componentId: string, prop: string, value: SpecPropValue | null) => void;
   onUpdateSectionContent: (sectionId: string, slot: string, value: unknown) => void;
   onUpdateSectionOverride: (sectionId: string, key: string, value: string) => void;
 };
@@ -60,12 +57,19 @@ const OVERRIDE_OPTION_LABELS: Record<string, Record<string, string>> = {
   density: { cozy: "Cozy", comfortable: "Comfortable", spacious: "Spacious" },
 };
 
+// The system pieces every generated design is built from (the only components
+// with a direct counterpart in the rendered outputs).
+const DESIGN_PIECES: { id: string; label: string }[] = [
+  { id: "component-actions", label: "Buttons" },
+  { id: "component-cards", label: "Cards" },
+  { id: "data-kpi", label: "KPI tiles" },
+];
+
 export function EditorDock({
   brand,
   inventory,
   sources,
   report,
-  selectedComponent,
   selectedRule,
   creation,
   selectedSection,
@@ -73,18 +77,16 @@ export function EditorDock({
   overrideChoices,
   busy,
   open,
-  specSaveState,
+  brandSaveLabel,
   creationSaveLabel,
   onUndo,
-  onUpdateComponent,
-  onUpdateComponentSpec,
-  onToggleComponentValue,
   onSetRuleStatus,
   onSelectRule,
+  onUpdateComponentSpec,
+  onSetCreationException,
   onUpdateSectionContent,
   onUpdateSectionOverride,
 }: EditorDockProps) {
-  const linkedRules = brand && selectedComponent ? rulesForComponent(selectedComponent, brand.rules) : [];
   const failing = report ? report.results.filter((result) => result.status === "failed") : [];
 
   return (
@@ -155,104 +157,16 @@ export function EditorDock({
         </Panel>
       ) : null}
 
-      {brand && selectedComponent?.spec ? (
-        <Panel title="Design" eyebrow={specSaveLabel(specSaveState, selectedComponent.name)}>
-          <div className="design-controls" data-design-controls>
-            <p className="panel-hint">Changes show in the example right away and save on their own.</p>
-            {Object.entries(selectedComponent.spec.props)
-              .filter(([, value]) => typeof value === "number")
-              .map(([key, value]) => (
-                <SpecStepper
-                  key={key}
-                  label={propLabel(key)}
-                  options={propOptions(brand, key)}
-                  unit={key === "font_weight" ? "" : "px"}
-                  value={value as number}
-                  onChange={(next) => onUpdateComponentSpec(selectedComponent.id, key, next)}
-                />
-              ))}
-            {Object.entries(selectedComponent.spec.props)
-              .filter(([, value]) => typeof value === "string")
-              .map(([key, value]) => (
-                <SwatchSelect
-                  colors={brand.tokens.colors}
-                  key={key}
-                  label={propLabel(key)}
-                  roles={semanticRoles(brand)}
-                  value={value as string}
-                  onChange={(role) => onUpdateComponentSpec(selectedComponent.id, key, role)}
-                />
-              ))}
-          </div>
-        </Panel>
-      ) : null}
-
-      {selectedComponent ? (
-        <Panel title="Component Details" eyebrow={selectedComponent.name}>
-          <div className="component-editor" data-component-compact-editor>
-            <div className="status-picker">
-              {REVIEW_STATUSES.map((status) => (
-                <Chip
-                  active={selectedComponent.status === status}
-                  key={status}
-                  tone={statusTone(status)}
-                  onClick={() => onUpdateComponent(selectedComponent.id, { status })}
-                >
-                  {status}
-                </Chip>
-              ))}
-            </div>
-
-            <p>{selectedComponent.purpose}</p>
-
-            <ChipEditor
-              label="Surfaces"
-              values={selectedComponent.surfaces}
-              suggestions={inventory?.surface_packs.map((pack) => pack.id) ?? []}
-              onToggle={(value) => onToggleComponentValue(selectedComponent.id, "surfaces", value)}
-            />
-            <Disclosure title="States and variants">
-              <ChipEditor
-                label="States"
-                values={selectedComponent.states ?? []}
-                suggestions={["default", "hover", "focus", "disabled", "empty", "loading", "selected"]}
-                onToggle={(value) => onToggleComponentValue(selectedComponent.id, "states", value)}
-              />
-              <ChipEditor
-                label="Variants"
-                values={selectedComponent.variants ?? []}
-                suggestions={["primary", "secondary", "compact", "editorial", "data-heavy", "marketing"]}
-                onToggle={(value) => onToggleComponentValue(selectedComponent.id, "variants", value)}
-              />
-            </Disclosure>
-
-            <Disclosure title="Tokens and rules">
-              <ChipEditor
-                label="Token refs"
-                values={selectedComponent.token_refs ?? []}
-                suggestions={["tokens.colors", "tokens.typography", "tokens.spacing", "tokens.radii", "tokens.logo"]}
-                onToggle={(value) => onToggleComponentValue(selectedComponent.id, "token_refs", value)}
-              />
-              {linkedRules.length ? (
-                <div className="linked-rules">
-                  <strong>Linked rules</strong>
-                  {linkedRules.map((rule) => (
-                    <div className="sentence-rule" key={rule.id}>
-                      <span>{rule.category}</span>
-                      <strong>{rule.metric}</strong>
-                      <span>{rule.assertion}</span>
-                      <Chip tone={statusTone(rule.status)}>{rule.status}</Chip>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </Disclosure>
-
-            <Disclosure title="Advanced component object">
-              <pre>{JSON.stringify(selectedComponent, null, 2)}</pre>
-            </Disclosure>
-          </div>
-        </Panel>
+      {brand && inventory && creation ? (
+        <PiecesPanel
+          brand={brand}
+          brandSaveLabel={brandSaveLabel}
+          creation={creation}
+          creationSaveLabel={creationSaveLabel}
+          inventory={inventory}
+          onSetCreationException={onSetCreationException}
+          onUpdateComponentSpec={onUpdateComponentSpec}
+        />
       ) : null}
 
       {selectedRule ? (
@@ -326,6 +240,121 @@ export function EditorDock({
         </div>
       </Panel>
     </aside>
+  );
+}
+
+function PiecesPanel({
+  brand,
+  inventory,
+  creation,
+  brandSaveLabel,
+  creationSaveLabel,
+  onUpdateComponentSpec,
+  onSetCreationException,
+}: {
+  brand: Brand;
+  inventory: DesignInventory;
+  creation: Creation;
+  brandSaveLabel: string;
+  creationSaveLabel: string;
+  onUpdateComponentSpec: (componentId: string, prop: string, value: SpecPropValue) => void;
+  onSetCreationException: (componentId: string, prop: string, value: SpecPropValue | null) => void;
+}) {
+  const [scope, setScope] = useState<"everywhere" | "design">("everywhere");
+  const exceptions = creation.exceptions ?? {};
+  const exceptionCount = Object.keys(exceptions).length;
+
+  return (
+    <Panel
+      title="The pieces on this design"
+      eyebrow={scope === "design" ? creationSaveLabel : brandSaveLabel}
+    >
+      <div className="pieces-panel" data-pieces-panel>
+        <p className="panel-hint">
+          These come from your design system. Edit them for every design, or make an exception just here.
+        </p>
+        <ChoiceChips
+          label="Apply changes"
+          optionLabels={{ everywhere: "Everywhere", design: "Just this design" }}
+          options={["everywhere", "design"]}
+          value={scope}
+          onChange={(value) => setScope(value as "everywhere" | "design")}
+        />
+        {exceptionCount ? (
+          <p className="panel-hint">
+            {exceptionCount === 1 ? "1 setting differs" : `${exceptionCount} settings differ`} from your
+            system in this design.
+          </p>
+        ) : null}
+
+        {DESIGN_PIECES.map((piece) => {
+          const component = inventory.components.find((item) => item.id === piece.id);
+          if (!component?.spec) return null;
+          const pieceHasExceptions = Object.keys(exceptions).some((key) => key.startsWith(`${piece.id}.`));
+          return (
+            <section className="piece-group" key={piece.id}>
+              <header className="piece-group-head">
+                <strong>{piece.label}</strong>
+                {pieceHasExceptions ? (
+                  <span data-exception-badge>
+                    <Chip title="Some settings differ from your system in this design" tone="warn">
+                      ● Customized here
+                    </Chip>
+                  </span>
+                ) : null}
+              </header>
+              <Disclosure title={`Edit ${piece.label.toLowerCase()}`}>
+                <div className="design-controls">
+                  {Object.entries(component.spec.props).map(([prop, systemValue]) => {
+                    const key = `${piece.id}.${prop}`;
+                    const hasException = key in exceptions;
+                    const shown = hasException ? exceptions[key] : systemValue;
+                    const apply = (next: SpecPropValue) =>
+                      scope === "everywhere"
+                        ? onUpdateComponentSpec(piece.id, prop, next)
+                        : onSetCreationException(piece.id, prop, next);
+                    return (
+                      <div className={`piece-control${hasException ? " has-exception" : ""}`} key={prop}>
+                        {typeof shown === "number" ? (
+                          <SpecStepper
+                            label={propLabel(prop)}
+                            options={propOptions(brand, prop)}
+                            unit={prop === "font_weight" ? "" : "px"}
+                            value={shown}
+                            onChange={apply}
+                          />
+                        ) : typeof shown === "string" ? (
+                          <SwatchSelect
+                            colors={brand.tokens.colors}
+                            label={propLabel(prop)}
+                            roles={semanticRoles(brand)}
+                            value={shown}
+                            onChange={apply}
+                          />
+                        ) : null}
+                        {hasException ? (
+                          <div className="exception-note">
+                            <span>differs from your system</span>
+                            <button
+                              className="reset-link"
+                              type="button"
+                              onClick={() => onSetCreationException(piece.id, prop, null)}
+                            >
+                              <Undo2 size={12} />
+                              Back to your system
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </Disclosure>
+            </section>
+          );
+        })}
+      </div>
+    </Panel>
   );
 }
 
@@ -448,37 +477,4 @@ function slotLabel(slot: string): string {
 
 function pluralize(count: number, singular: string, plural?: string): string {
   return `${count} ${count === 1 ? singular : (plural ?? `${singular}s`)}`;
-}
-
-function specSaveLabel(state: SpecSaveState, componentName: string): string {
-  if (state === "pending" || state === "saving") return `${componentName} — saving…`;
-  if (state === "saved") return `${componentName} — saved`;
-  if (state === "error") return `${componentName} — couldn't save`;
-  return componentName;
-}
-
-function ChipEditor({
-  label,
-  values,
-  suggestions,
-  onToggle,
-}: {
-  label: string;
-  values: string[];
-  suggestions: string[];
-  onToggle: (value: string) => void;
-}) {
-  const options = [...new Set([...values, ...suggestions])];
-  return (
-    <div className="chip-editor">
-      <strong>{label}</strong>
-      <div className="chip-row">
-        {options.map((value) => (
-          <Chip active={values.includes(value)} key={value} onClick={() => onToggle(value)}>
-            {value}
-          </Chip>
-        ))}
-      </div>
-    </div>
-  );
 }

@@ -1,9 +1,9 @@
 import { CheckCircle2, XCircle } from "lucide-react";
-import type { Brand, Rule, SourceRecord, ValidationReport } from "../types";
+import type { Brand, Rule, SourceRecord, ValidationReport, ValidationResult } from "../types";
 import { extractedColors } from "./BrandIntake";
 import { ChoiceChips, ColorField, SpecStepper, TextField } from "./controls";
 import { propOptions } from "./preview";
-import { Chip, Panel, statusTone } from "./primitives";
+import { Chip, Disclosure, Panel, statusTone } from "./primitives";
 
 /**
  * Step 2 — the brand's foundations as *editable settings*. Every control
@@ -169,50 +169,78 @@ export function StyleSettings({
 
       <Panel title="The rules" eyebrow="What keeps everything on brand">
         <p className="panel-hint">
-          Machine checks run on everything you make. Green means it passes today.
+          Machine checks run on everything you make. Anything that needs a look shows up here first.
         </p>
         <div className="rules-plain-list">
-          {sortedRules(brand.rules, report).map(({ rule, result }) => (
-            <article className="rule-plain-row sentence-rule" key={rule.id}>
-              {result ? (
-                <Chip tone={statusTone(result.status)}>
-                  {result.status === "passed" ? (
-                    <CheckCircle2 size={13} />
-                  ) : result.status === "failed" ? (
-                    <XCircle size={13} />
-                  ) : null}
-                  {result.status}
-                </Chip>
-              ) : (
-                <Chip tone={statusTone(rule.status)}>{rule.status}</Chip>
-              )}
-              <button className="rule-plain-name" type="button" onClick={() => onSelectRule(rule.id)}>
-                {rule.label || rule.id}
-              </button>
-              <small>{rule.rationale}</small>
-              {rule.status === "draft" ? (
-                <button
-                  className="ghost-action"
-                  type="button"
-                  onClick={() => onSetRuleStatus(rule.id, "approved")}
-                >
-                  Approve
-                </button>
-              ) : null}
-            </article>
+          {needsAttention(brand.rules, report).map((row) => (
+            <RuleRow key={row.rule.id} row={row} onSelectRule={onSelectRule} onSetRuleStatus={onSetRuleStatus} />
           ))}
+          {passingRules(brand.rules, report).length ? (
+            <Disclosure title={`Show ${passingRules(brand.rules, report).length} passing checks`}>
+              {passingRules(brand.rules, report).map((row) => (
+                <RuleRow key={row.rule.id} row={row} onSelectRule={onSelectRule} onSetRuleStatus={onSetRuleStatus} />
+              ))}
+            </Disclosure>
+          ) : null}
         </div>
       </Panel>
     </div>
   );
 }
 
-function sortedRules(rules: Rule[], report: ValidationReport) {
+type RuleRowData = { rule: Rule; result: ValidationResult | null };
+
+function sortedRules(rules: Rule[], report: ValidationReport): RuleRowData[] {
   const resultById = new Map(report.results.map((result) => [result.rule_id, result]));
   return rules
     .filter((rule) => rule.status !== "rejected")
     .map((rule) => ({ rule, result: resultById.get(rule.id) ?? null }))
     .sort((a, b) => rankRule(a.result?.status) - rankRule(b.result?.status));
+}
+
+function needsAttention(rules: Rule[], report: ValidationReport): RuleRowData[] {
+  return sortedRules(rules, report).filter((row) => row.result?.status !== "passed");
+}
+
+function passingRules(rules: Rule[], report: ValidationReport): RuleRowData[] {
+  return sortedRules(rules, report).filter((row) => row.result?.status === "passed");
+}
+
+function RuleRow({
+  row,
+  onSelectRule,
+  onSetRuleStatus,
+}: {
+  row: RuleRowData;
+  onSelectRule: (ruleId: string) => void;
+  onSetRuleStatus: (ruleId: string, status: Rule["status"]) => void;
+}) {
+  const { rule, result } = row;
+  return (
+    <article className="rule-plain-row sentence-rule">
+      {result ? (
+        <Chip tone={statusTone(result.status)}>
+          {result.status === "passed" ? (
+            <CheckCircle2 size={13} />
+          ) : result.status === "failed" ? (
+            <XCircle size={13} />
+          ) : null}
+          {result.status}
+        </Chip>
+      ) : (
+        <Chip tone={statusTone(rule.status)}>{rule.status}</Chip>
+      )}
+      <button className="rule-plain-name" type="button" onClick={() => onSelectRule(rule.id)}>
+        {rule.label || rule.id}
+      </button>
+      <small>{rule.rationale}</small>
+      {rule.status === "draft" ? (
+        <button className="ghost-action" type="button" onClick={() => onSetRuleStatus(rule.id, "approved")}>
+          Approve
+        </button>
+      ) : null}
+    </article>
+  );
 }
 
 function rankRule(status: string | undefined): number {

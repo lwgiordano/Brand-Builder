@@ -65,6 +65,7 @@
         "frontend/src/main.tsx",
         "frontend/src/types.ts",
         "frontend/src/workbench/BrandIntake.tsx",
+        "frontend/src/workbench/ComponentReview.tsx",
         "frontend/src/workbench/CreationStudio.tsx",
         "frontend/src/workbench/EditorDock.tsx",
         "frontend/src/workbench/StyleSettings.tsx",

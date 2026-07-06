@@ -278,6 +278,16 @@ function CreationEditor({
         <div className="creation-name">
           <TextField label="Name" value={creation.name} onChange={onRenameCreation} />
           <small className="muted-note">{saveStateLabel}</small>
+          {Object.keys(creation.exceptions ?? {}).length ? (
+            <Chip
+              title="Some pieces differ from your system in this design — see “The pieces on this design”"
+              tone="warn"
+            >
+              {Object.keys(creation.exceptions ?? {}).length === 1
+                ? "1 exception"
+                : `${Object.keys(creation.exceptions ?? {}).length} exceptions`}
+            </Chip>
+          ) : null}
         </div>
         <div className="creation-editor-actions">
           <button

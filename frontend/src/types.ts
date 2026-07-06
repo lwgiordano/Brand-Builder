@@ -234,6 +234,8 @@ export type Creation = {
   template_id: string;
   version: number;
   sections: CreationSection[];
+  /** Whole-design overrides: "<component_id>.<prop>" -> value ("just here" edits). */
+  exceptions?: Record<string, string | number | boolean>;
   created_at: string;
   updated_at: string;
 };

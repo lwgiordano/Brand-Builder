@@ -10,6 +10,7 @@ covers:
   - frontend/src/main.tsx
   - frontend/src/types.ts
   - frontend/src/workbench/BrandIntake.tsx
+  - frontend/src/workbench/ComponentReview.tsx
   - frontend/src/workbench/CreationStudio.tsx
   - frontend/src/workbench/EditorDock.tsx
   - frontend/src/workbench/StyleSettings.tsx
@@ -50,9 +51,14 @@ the 1260px drawer as before; everything stacks at 900px).
    logo wordmark/height/placement — all persisted through the same optimistic debounced
    whole-brand save as spec edits (`handleUpdateToken` shares the sequence-guarded pipeline).
    Below: every rule as a plain sentence with live pass/fail chips, failures first.
-3. **Your components** — the Component Lab canvas unchanged in essence (grouped rail, dotted
-   canvas, live `preview.tsx` examples, Design panel in the dock), with **Complete my system**
-   relocated to the rail.
+3. **Your components** (`ComponentReview.tsx`) — a **guided one-at-a-time walkthrough**: the
+   "Component N of M" counter (aria-live) is the accessible progress signal over an aria-hidden
+   segment bar; Previous/Next browse (they never change status — approval stays the explicit
+   chip picker); "Jump to a piece" is a disclosure listing every component by category; the
+   editor is **docked beside the dotted canvas inside the step** (reference pattern #206 — never
+   a modal, never the drawer): Design steppers/swatches, status chips, then detail disclosures.
+   Component editing no longer lives in the EditorDock. ←/→ arrows step when focus is in the
+   walkthrough. "Complete my system" sits in the walkthrough header.
 4. **Make things** (`CreationStudio.tsx`) — the creation system. "New design" wizard: type
    (deck/report/landing) → proven skeleton template (`GET /api/templates`) → optional pasted
    content (backend structurer maps headings→titles, dashes→bullets, "label: 42%"→numbers).
@@ -64,6 +70,16 @@ the 1260px drawer as before; everything stacks at 900px).
    Highlight color). Exports: **Download PowerPoint** (real .pptx, decks), **Print to PDF**
    (reports carry A4 print CSS), Open full size. The home view lists designs
    (`data-creation-list`) and a "Your brand kit" row of the auto-generated artifacts.
+5. **Whole-design exceptions.** A creation may carry `exceptions`
+   (`"<component_id>.<prop>" → value`, schema-guarded key pattern). The dock's **"The pieces on
+   this design"** panel (`data-pieces-panel`) edits the system pieces the outputs are built from
+   (Buttons, Cards, KPI tiles) with a scope toggle **Everywhere | Just this design** (#108):
+   Everywhere rides the brand save (all artifacts + designs re-render); Just-this-design writes
+   an exception via the creation save (only that design re-renders). Exceptions are always
+   visible (#215/#109): a "● Customized here" badge per piece, a per-control "differs from your
+   system — Back to your system" reset, and an "N exceptions" chip on the editor header. The
+   backend merges exceptions over `_spec_props` in `creation_html` (byte-stable) and the pptx
+   export honors the KPI-tile subset (the only piece with a deck-shape counterpart).
 
 ## State/save machinery (`WorkbenchApp.tsx`)
 
@@ -83,12 +99,21 @@ picker; 24px + 4px halo documented dense-picker exception), `ChoiceChips` (singl
 `aria-pressed`), `TextField`, `ColorField`. All labels are plain words (`propLabel`,
 `OVERRIDE_LABELS`) — no CSS vocabulary reaches the user.
 
+## Progressive disclosure
+
+Essentials visible, depth on demand (#144): the stage heading is a compact line (one eye-winner
+goes to the canvas), passing checks collapse behind "Show N passing checks" in Set your style,
+advanced JSON/evidence stay behind disclosures, and each design piece's controls sit behind an
+"Edit …" disclosure under its badge row.
+
 ## Quality bar (verified 2026-07-06)
 
-axe-core **0 violations** across all four steps, the creation editor, and 375px mobile; 0px
-horizontal overflow at 1440/768/375; pasted-content → deck → inspector edit → live preview
-refresh → undo → PowerPoint export proven in-browser; backend suite 61 passing (creations CRUD +
-undo + byte-stable HTML + pptx round-trip + artifact whitelist + image-palette determinism).
+axe-core **0 violations** across all four steps, the walkthrough, the pieces panel, the creation
+editor, and 375px mobile; 0px horizontal overflow at 1440/768/375; proven in-browser: walkthrough
+nav + jump list + in-step edit repaint, exception isolation between two designs, Everywhere
+propagation to sibling designs, reset-to-system, a rapid scope-toggled edit burst with zero
+failures, and pasted-content → deck → edit → undo → PowerPoint export; backend suite 63 passing
+(adds exception round-trip/isolation/undo/schema guards + pptx exception read-back).
 
 ## Known deferred work
 
