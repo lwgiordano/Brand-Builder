@@ -54,6 +54,41 @@
       "last_human_reviewed": "2026-06-29",
       "path": "docs/knowledge/00_substrate.md",
       "purpose": "Universal Agent Substrate Kit v3 files installed in this repo."
+    },
+    {
+      "covers": [
+        "frontend/src/api.ts",
+        "frontend/src/app/inventory.ts",
+        "frontend/src/app/rules.ts",
+        "frontend/src/app/validation.ts",
+        "frontend/src/components/AssetImage.tsx",
+        "frontend/src/main.tsx",
+        "frontend/src/types.ts",
+        "frontend/src/workbench/BrandIntake.tsx",
+        "frontend/src/workbench/ComponentReview.tsx",
+        "frontend/src/workbench/CreationStudio.tsx",
+        "frontend/src/workbench/EditorDock.tsx",
+        "frontend/src/workbench/StyleSettings.tsx",
+        "frontend/src/workbench/SystemCanvas.tsx",
+        "frontend/src/workbench/WorkbenchApp.tsx",
+        "frontend/src/workbench/controls.tsx",
+        "frontend/src/workbench/model.ts",
+        "frontend/src/workbench/preview.tsx",
+        "frontend/src/workbench/primitives.tsx",
+        "frontend/src/workbench.css",
+        "vite.config.ts"
+      ],
+      "last_human_reviewed": "2026-07-06",
+      "path": "docs/knowledge/01_brand_system_studio_frontend.md",
+      "purpose": "brand-system-studio-frontend"
+    },
+    {
+      "covers": [
+        ".github/workflows/ci.yml"
+      ],
+      "last_human_reviewed": "2026-07-05",
+      "path": "docs/knowledge/02_ci_green_signal.md",
+      "purpose": "subsystem-ci-green-signal"
     }
   ]
 }

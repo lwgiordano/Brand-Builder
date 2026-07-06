@@ -9,6 +9,9 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 0}
@@ -45,3 +48,35 @@ jobs:
           ./manage.sh doctor "$MODE"
       - name: Substrate + language checks
         run: ./manage.sh check
+      # Closure signal: this repo's PR watcher receives comment webhooks but
+      # not CI-success, so a green run is otherwise invisible to it. Re-emit
+      # the terminal state as a comment (the channel the watcher DOES receive),
+      # delete-and-repost so exactly one lands per green run and a `created`
+      # event fires each time. Same-repo PRs only (fork tokens are read-only).
+      - name: Signal CI-green
+        if: ${{ success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const marker = '<!-- ci-green-signal -->';
+            const { owner, repo } = context.repo;
+            const number = context.payload.pull_request.number;
+            const short = context.payload.pull_request.head.sha.slice(0, 7);
+            const body = [
+              marker,
+              `✅ **CI green** for \`${short}\` — all checks passed on this commit.`,
+              '',
+              'Machine-authored closure signal. It is re-posted (delete + create) on'
+              + ' each green run so a watcher keyed on the head commit sees exactly one'
+              + ' event per commit and dedupes on the SHA.',
+            ].join('\n');
+            const prior = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number: number, per_page: 100,
+            });
+            for (const c of prior) {
+              if (c.user && c.user.type === 'Bot' && c.body && c.body.includes(marker)) {
+                await github.rest.issues.deleteComment({ owner, repo, comment_id: c.id });
+              }
+            }
+            await github.rest.issues.createComment({ owner, repo, issue_number: number, body });

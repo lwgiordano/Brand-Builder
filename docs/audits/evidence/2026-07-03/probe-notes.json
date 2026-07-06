@@ -1,0 +1,64 @@
+[
+  {
+    "probe": "provider-default",
+    "value": "codex"
+  },
+  {
+    "probe": "extract-with-default-provider",
+    "toast": {
+      "message": "Proposal ready for review",
+      "error": null
+    }
+  },
+  {
+    "probe": "create-invalid-slug",
+    "toast": {
+      "message": "Proposal ready for review",
+      "error": "Invalid brand slug. Use lowercase letters, numbers, and hyphens."
+    }
+  },
+  {
+    "probe": "url-blocked-host",
+    "toast": {
+      "message": "Proposal ready for review",
+      "error": "Blocked URL: localhost is not allowed"
+    }
+  },
+  {
+    "probe": "rule-approve",
+    "toast": {
+      "message": "Rule moved to approved",
+      "error": null
+    }
+  },
+  {
+    "probe": "generate",
+    "toast": {
+      "message": "Artifacts regenerated",
+      "error": null
+    }
+  },
+  {
+    "probe": "delete-source-no-confirm",
+    "before": 4,
+    "after": 3,
+    "toast": {
+      "message": "Source removed",
+      "error": null
+    }
+  },
+  {
+    "probe": "undo-after-delete",
+    "restored": 4,
+    "toast": {
+      "message": "Restored previous version",
+      "error": null
+    }
+  },
+  {
+    "probe": "brand-switch-api-calls",
+    "calls": [
+      "GET /api/brands/seed"
+    ]
+  }
+]
