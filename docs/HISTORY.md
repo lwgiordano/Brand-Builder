@@ -63,3 +63,9 @@ This file is `merge=union` in `.gitattributes` so concurrent branch entries comb
 **Intent:** Match the user's flow exactly: generate everything from brand inputs, review components one by one on a canvas with docked controls, then edit the system from inside finished outputs with an Everywhere/Just-this-design scope and visible, resettable exceptions
 **Knowledge:** Creation exceptions are flat component.prop keys (schema propertyNames guard) merged over _spec_props in creation_html (byte-stable) and honored by pptx for KPI tiles; walkthrough position derives from selectedComponentId against one flattened category order; component editing left the dock (reference pattern 206); probe9 proved isolation/propagation/reset/burst with axe 0
 
+## 2026-07-06T15:16:34Z — NO_SESSION — bc1eaca
+**Summary:** v4 design-audit fixes: stage-heading tokens restored, reset-link pinned to 44px, arrow keys scoped away from the inspector
+**Files:** frontend/src/workbench.css,frontend/src/workbench/ComponentReview.tsx,frontend/src/workbench/EditorDock.tsx
+**Intent:** Close the v4 audit loop with the standing fix-and-reverify discipline; one finding was a doc-read race, already resolved at commit time
+**Knowledge:** stage-heading h2 must carry the shared heading tokens explicitly now that the shared selector list no longer includes it; min-height beats padding math for small-text hit targets; walkthrough arrow handler ignores events from .review-inspector and .jump-list
+
