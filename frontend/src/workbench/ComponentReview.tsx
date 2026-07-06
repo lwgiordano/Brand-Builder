@@ -86,8 +86,12 @@ export function ComponentReview({
   }
 
   function onKeyDown(event: React.KeyboardEvent) {
-    const tag = (event.target as HTMLElement).tagName;
+    const target = event.target as HTMLElement;
+    const tag = target.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    // Arrow-stepping only from the canvas/nav areas — never while focus is
+    // inside the editor or the jump list, where arrows would surprise.
+    if (target.closest(".review-inspector, .jump-list")) return;
     if (event.key === "ArrowLeft") {
       event.preventDefault();
       step(-1);

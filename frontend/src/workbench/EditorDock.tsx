@@ -282,8 +282,8 @@ function PiecesPanel({
         />
         {exceptionCount ? (
           <p className="panel-hint">
-            {exceptionCount === 1 ? "1 setting differs" : `${exceptionCount} settings differ`} from your
-            system in this design.
+            {exceptionCount === 1 ? "1 exception" : `${exceptionCount} exceptions`} in this design —
+            marked below, one click to undo.
           </p>
         ) : null}
 
@@ -298,7 +298,7 @@ function PiecesPanel({
                 {pieceHasExceptions ? (
                   <span data-exception-badge>
                     <Chip title="Some settings differ from your system in this design" tone="warn">
-                      ● Customized here
+                      <span aria-hidden="true">●</span> Customized here
                     </Chip>
                   </span>
                 ) : null}

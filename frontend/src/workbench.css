@@ -1917,9 +1917,6 @@ button.lab-chip:hover {
   }
 }
 
-@media (max-width: 900px) {
-
-}
 
 /* ————— guided component review + pieces/exceptions ————— */
 
@@ -1933,6 +1930,9 @@ button.lab-chip:hover {
 .stage-heading h2 {
   margin: 0;
   font-size: var(--t-title);
+  font-weight: var(--w-semibold);
+  color: var(--text-strong);
+  line-height: 1.2;
 }
 
 .stage-heading p {
@@ -2054,14 +2054,15 @@ button.lab-chip:hover {
   color: var(--text-muted);
 }
 
-/* 12px text + generous padding keeps the reset link at a 44px-tall target. */
+/* min-height pins the 44px hit target regardless of line-box math. */
 .reset-link {
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);
+  min-height: 44px;
   border: 0;
   background: none;
-  padding: var(--s-3) var(--s-1);
+  padding: 0 var(--s-1);
   font-size: var(--t-caption);
   font-weight: var(--w-semibold);
   color: var(--accent);
