@@ -1324,7 +1324,7 @@ function atomChoice(ctx: PreviewContext): ReactNode {
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: Math.max(11, size * 0.6),
+          fontSize: Math.max(12, size * 0.6),
         }}
       >
         ✓
@@ -1621,7 +1621,9 @@ export function ReferenceScenes({ brand, component }: { brand: Brand; component:
           <div aria-hidden="true" className="reference-scene-body" style={{ fontFamily: ctx.font }}>
             {scene.render(ctx, component)}
           </div>
-          <figcaption>{scene.caption}</figcaption>
+          {/* the aria-label above already carries the caption — hide it from
+              AT so role="img" isn't announced twice */}
+          <figcaption aria-hidden="true">{scene.caption}</figcaption>
         </figure>
       ))}
     </div>
@@ -1650,7 +1652,7 @@ export function StatesRow({ brand, component }: { brand: Brand; component: Desig
           <div aria-hidden="true" className="state-frame-body" style={{ fontFamily: ctx.font }}>
             <span style={{ display: "inline-flex", ...frame.style }}>{stateSubject(ctx, component)}</span>
           </div>
-          <figcaption>{frame.label}</figcaption>
+          <figcaption aria-hidden="true">{frame.label}</figcaption>
         </figure>
       ))}
     </div>
