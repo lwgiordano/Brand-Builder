@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   addUrl,
   applyDrafts,
+  applyPatch,
   completeInventory,
   createBrand,
   createCreation,
@@ -17,6 +18,7 @@ import {
   getTemplates,
   listBrands,
   listCreations,
+  proposeEdit,
   saveCreation,
   saveRaw,
   setRuleStatus,
@@ -67,6 +69,7 @@ export function WorkbenchApp() {
   const [providers, setProviders] = useState<ProviderStatus[]>([]);
   const [provider, setProvider] = useState("codex");
   const [proposal, setProposal] = useState<AiProposal | null>(null);
+  const [revise, setRevise] = useState<AiProposal | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [dockOpen, setDockOpen] = useState(false);
@@ -377,6 +380,36 @@ export function WorkbenchApp() {
         setProposal(null);
       },
       "Approved — your brand just learned something new",
+    );
+  }
+
+  function handleProposeRevise(componentId: string, command: string) {
+    if (!brand) return;
+    void runBusy(
+      "revise-propose",
+      async () => {
+        const result = await proposeEdit(brand.metadata.slug, command, provider, componentId);
+        setRevise(result.proposal);
+      },
+      "Suggestion ready — apply it if you like it",
+    );
+  }
+
+  function handleApplyRevise() {
+    if (!brand || !revise) return;
+    void runBusy(
+      "revise-apply",
+      async () => {
+        const nextPayload = await applyPatch(
+          brand.metadata.slug,
+          revise.patch ?? [],
+          revise.summary ?? "Component change",
+        );
+        setPayload(nextPayload);
+        setRevise(null);
+      },
+      "Done — the change is in",
+      { label: "Undo", run: handleUndo },
     );
   }
 
@@ -840,7 +873,16 @@ export function WorkbenchApp() {
                 selectedComponentId: selectedComponent?.id ?? null,
                 busy,
                 specSaveState,
-                onSelectComponent: setSelectedComponentId,
+                reviseProposal: revise,
+                onProposeRevise: handleProposeRevise,
+                onApplyRevise: handleApplyRevise,
+                onSkipRevise: () => setRevise(null),
+                onSelectComponent: (componentId: string) => {
+                  // A pending suggestion always targets the component it was
+                  // written for — never carry it across a selection change.
+                  setRevise(null);
+                  setSelectedComponentId(componentId);
+                },
                 onSelectRule: (ruleId) => {
                   setSelectedRuleId(ruleId);
                   setDockOpen(true);

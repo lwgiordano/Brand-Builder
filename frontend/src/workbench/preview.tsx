@@ -1147,3 +1147,512 @@ function renderGeneric(ctx: PreviewContext, component: DesignComponent): ReactNo
     </div>
   );
 }
+
+/* ---------- v5: "see it in use" reference scenes + state row ---------- */
+
+function renderLive(ctx: PreviewContext, component: DesignComponent): ReactNode {
+  const renderer = RENDERERS[component.spec?.preview ?? "generic"] ?? renderGeneric;
+  return renderer(ctx, component);
+}
+
+function pageWrap(ctx: PreviewContext, children: ReactNode): ReactNode {
+  return (
+    <div
+      style={{
+        width: "100%",
+        padding: 14,
+        borderRadius: 8,
+        background: ctx.brand.tokens.colors.background,
+        display: "grid",
+        gap: 10,
+        justifyItems: "start",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function miniCard(ctx: PreviewContext, children: ReactNode): ReactNode {
+  return (
+    <div
+      style={{
+        width: "min(300px, 100%)",
+        padding: 14,
+        borderRadius: 10,
+        background: ctx.brand.tokens.colors.surface,
+        border: `1px solid ${ctx.brand.tokens.colors.border}`,
+        display: "grid",
+        gap: 10,
+        justifyItems: "start",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function fakeTitle(ctx: PreviewContext, text: string): ReactNode {
+  return <strong style={{ fontSize: 15, color: ctx.brand.tokens.colors.text }}>{text}</strong>;
+}
+
+function fakeLabel(ctx: PreviewContext, text: string): ReactNode {
+  return <span style={{ fontSize: 12, color: ctx.brand.tokens.colors.muted }}>{text}</span>;
+}
+
+function fakeField(ctx: PreviewContext): ReactNode {
+  return (
+    <span
+      style={{
+        display: "block",
+        width: "100%",
+        height: 36,
+        borderRadius: 6,
+        background: ctx.brand.tokens.colors.surface,
+        border: `1px solid ${ctx.brand.tokens.colors.border}`,
+      }}
+    />
+  );
+}
+
+function fakeButton(ctx: PreviewContext): ReactNode {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        minHeight: 32,
+        padding: "0 14px",
+        borderRadius: 6,
+        background: ctx.brand.tokens.colors.accent,
+        color: ctx.brand.tokens.colors.surface,
+        fontSize: 13,
+        fontWeight: 600,
+      }}
+    >
+      Continue
+    </span>
+  );
+}
+
+function atomButton(ctx: PreviewContext): ReactNode {
+  return <span style={buttonStyle(ctx)}>Continue</span>;
+}
+
+function atomField(ctx: PreviewContext, text: string): ReactNode {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        width: "min(220px, 100%)",
+        minHeight: ctx.n("height", 40),
+        padding: `0 ${ctx.n("padding_x", 12)}px`,
+        borderRadius: ctx.n("radius", 6),
+        background: ctx.c("fill", "surface"),
+        color: ctx.c("text", "text"),
+        border: `1px solid ${ctx.c("border", "border")}`,
+        fontSize: ctx.n("font_size", 14),
+      }}
+    >
+      {text}
+    </span>
+  );
+}
+
+function atomChip(ctx: PreviewContext): ReactNode {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        height: ctx.n("height", 28),
+        padding: `0 ${ctx.n("padding_x", 12)}px`,
+        borderRadius: ctx.n("radius", 14),
+        fontSize: Math.max(12, ctx.n("font_size", 13)),
+        background: ctx.c("text", "text"),
+        color: ctx.c("fill", "background"),
+        border: `1px solid ${ctx.c("text", "text")}`,
+      }}
+    >
+      Slides
+    </span>
+  );
+}
+
+function atomSwitch(ctx: PreviewContext): ReactNode {
+  const width = ctx.n("track_width", 44);
+  const height = Math.max(20, ctx.n("track_height", 24));
+  const thumb = height - 6;
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        width,
+        height,
+        borderRadius: height,
+        background: ctx.c("fill", "accent"),
+        justifyContent: "flex-end",
+        padding: 3,
+      }}
+    >
+      <span style={{ width: thumb, height: thumb, borderRadius: thumb, background: "#fff" }} />
+    </span>
+  );
+}
+
+function atomChoice(ctx: PreviewContext): ReactNode {
+  const size = ctx.n("box_size", 20);
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        fontSize: Math.max(12, ctx.n("font_size", 14)),
+        color: ctx.c("text", "text"),
+      }}
+    >
+      <span
+        style={{
+          width: size,
+          height: size,
+          borderRadius: ctx.n("radius", 4),
+          background: ctx.c("fill", "accent"),
+          color: "#fff",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: Math.max(11, size * 0.6),
+        }}
+      >
+        ✓
+      </span>
+      Weekly digest
+    </span>
+  );
+}
+
+function stateSubject(ctx: PreviewContext, component: DesignComponent): ReactNode {
+  const kind = component.spec?.preview ?? "generic";
+  if (kind === "button") return atomButton(ctx);
+  if (kind === "field") return atomField(ctx, "alex@example.com");
+  if (kind === "search") return atomField(ctx, "Search…");
+  if (kind === "select") return atomField(ctx, "Newest first ▾");
+  if (kind === "chips") return atomChip(ctx);
+  if (kind === "switch") return atomSwitch(ctx);
+  if (kind === "choices") return atomChoice(ctx);
+  return renderLive(ctx, component);
+}
+
+type SceneDef = {
+  id: string;
+  caption: string;
+  render: (ctx: PreviewContext, component: DesignComponent) => ReactNode;
+};
+
+const buttonScenes: SceneDef[] = [
+  {
+    id: "form",
+    caption: "In a signup form",
+    render: (ctx) =>
+      pageWrap(
+        ctx,
+        miniCard(
+          ctx,
+          <>
+            {fakeTitle(ctx, "Create your account")}
+            {fakeLabel(ctx, "Work email")}
+            {fakeField(ctx)}
+            {atomButton(ctx)}
+          </>,
+        ),
+      ),
+  },
+  {
+    id: "card",
+    caption: "At the end of a card",
+    render: (ctx) =>
+      pageWrap(
+        ctx,
+        miniCard(
+          ctx,
+          <>
+            {fakeTitle(ctx, "Share the Q3 deck?")}
+            <Lines color={ctx.brand.tokens.colors.text} count={2} width={92} />
+            <span style={{ display: "flex", gap: 10, alignItems: "center", justifySelf: "end" }}>
+              <span style={{ fontSize: 13, color: ctx.brand.tokens.colors.muted }}>Not now</span>
+              {atomButton(ctx)}
+            </span>
+          </>,
+        ),
+      ),
+  },
+  {
+    id: "topbar",
+    caption: "In the top bar",
+    render: (ctx) => (
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "10px 14px",
+          borderRadius: 8,
+          background: ctx.brand.tokens.colors.surface,
+          border: `1px solid ${ctx.brand.tokens.colors.border}`,
+        }}
+      >
+        <span style={{ width: 18, height: 18, borderRadius: 5, background: ctx.brand.tokens.colors.accent }} />
+        <strong style={{ fontSize: 13, color: ctx.brand.tokens.colors.text }}>
+          {ctx.brand.tokens.logo.wordmark}
+        </strong>
+        <span style={{ flex: 1 }} />
+        {atomButton(ctx)}
+      </div>
+    ),
+  },
+];
+
+const fieldScenes: SceneDef[] = [
+  {
+    id: "form",
+    caption: "In a form, with its label",
+    render: (ctx, component) =>
+      pageWrap(
+        ctx,
+        miniCard(
+          ctx,
+          <>
+            {fakeLabel(ctx, "Work email")}
+            {stateSubject(ctx, component)}
+            <span style={{ fontSize: 12, color: ctx.brand.tokens.colors.muted }}>
+              We only use this to send the report.
+            </span>
+          </>,
+        ),
+      ),
+  },
+  {
+    id: "with-button",
+    caption: "Next to the main button",
+    render: (ctx, component) =>
+      pageWrap(
+        ctx,
+        miniCard(
+          ctx,
+          <span style={{ display: "flex", gap: 10, alignItems: "center", width: "100%", flexWrap: "wrap" }}>
+            {stateSubject(ctx, component)}
+            {fakeButton(ctx)}
+          </span>,
+        ),
+      ),
+  },
+];
+
+const cardScenes: SceneDef[] = [
+  {
+    id: "page",
+    caption: "On the page",
+    render: (ctx, component) => pageWrap(ctx, renderLive(ctx, component)),
+  },
+  {
+    id: "grid",
+    caption: "Next to another card",
+    render: (ctx, component) =>
+      pageWrap(
+        ctx,
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, width: "100%" }}>
+          <div style={{ minWidth: 0 }}>{renderLive(ctx, component)}</div>
+          {miniCard(
+            ctx,
+            <>
+              {fakeTitle(ctx, "Board update")}
+              <Lines color={ctx.brand.tokens.colors.text} count={3} width={90} />
+            </>,
+          )}
+        </div>,
+      ),
+  },
+];
+
+const kpiScenes: SceneDef[] = [
+  {
+    id: "report",
+    caption: "In a report header",
+    render: (ctx, component) =>
+      pageWrap(
+        ctx,
+        <>
+          {fakeTitle(ctx, "Q3 performance")}
+          {renderLive(ctx, component)}
+        </>,
+      ),
+  },
+];
+
+const settingsScene: SceneDef[] = [
+  {
+    id: "settings",
+    caption: "In a settings panel",
+    render: (ctx, component) =>
+      pageWrap(
+        ctx,
+        miniCard(
+          ctx,
+          <>
+            {fakeTitle(ctx, "Notifications")}
+            {renderLive(ctx, component)}
+          </>,
+        ),
+      ),
+  },
+];
+
+const overlayScenes: SceneDef[] = [
+  {
+    id: "over-app",
+    caption: "Over the app",
+    render: (ctx, component) =>
+      pageWrap(
+        ctx,
+        <>
+          <Lines color={ctx.brand.tokens.colors.text} count={3} width={94} />
+          {renderLive(ctx, component)}
+        </>,
+      ),
+  },
+];
+
+const DEFAULT_SCENES: SceneDef[] = [
+  {
+    id: "page",
+    caption: "On the page",
+    render: (ctx, component) => pageWrap(ctx, renderLive(ctx, component)),
+  },
+];
+
+const SCENES_BY_KIND: Record<string, SceneDef[]> = {
+  button: buttonScenes,
+  field: fieldScenes,
+  search: fieldScenes,
+  select: fieldScenes,
+  card: cardScenes,
+  kpi: kpiScenes,
+  chips: [
+    {
+      id: "filters",
+      caption: "Above a results list",
+      render: (ctx, component) =>
+        pageWrap(
+          ctx,
+          <>
+            {renderLive(ctx, component)}
+            <Lines color={ctx.brand.tokens.colors.text} count={3} width={95} />
+          </>,
+        ),
+    },
+  ],
+  switch: settingsScene,
+  choices: settingsScene,
+  slider: settingsScene,
+  toast: overlayScenes,
+  banner: overlayScenes,
+  table: [
+    {
+      id: "report",
+      caption: "In a report",
+      render: (ctx, component) =>
+        pageWrap(
+          ctx,
+          <>
+            {fakeTitle(ctx, "Deals in review")}
+            {renderLive(ctx, component)}
+          </>,
+        ),
+    },
+  ],
+  badge: [
+    {
+      id: "list-row",
+      caption: "In a list row",
+      render: (ctx, component) =>
+        pageWrap(
+          ctx,
+          miniCard(
+            ctx,
+            <span style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}>
+              <span style={{ width: 24, height: 24, borderRadius: 12, background: `${ctx.brand.tokens.colors.accent}33` }} />
+              <span style={{ fontSize: 13, color: ctx.brand.tokens.colors.text }}>Hilco onboarding deck</span>
+              <span style={{ flex: 1 }} />
+              {renderLive(ctx, component)}
+            </span>,
+          ),
+        ),
+    },
+  ],
+};
+
+// Full-surface previews (slides, pages, shells) already show themselves in
+// context, so the strip would only repeat the canvas. Skip them.
+const NO_SCENE_KINDS = new Set(["slide", "page", "shell", "hero", "swatches", "type", "spacing", "logo"]);
+
+export function referenceScenes(component: DesignComponent): SceneDef[] {
+  const kind = component.spec?.preview ?? "generic";
+  if (NO_SCENE_KINDS.has(kind)) return [];
+  return SCENES_BY_KIND[kind] ?? DEFAULT_SCENES;
+}
+
+export function ReferenceScenes({ brand, component }: { brand: Brand; component: DesignComponent }) {
+  const ctx = makeContext(brand, component.spec);
+  const scenes = referenceScenes(component);
+  if (!scenes.length) return null;
+  return (
+    <div className="reference-scenes">
+      {scenes.map((scene) => (
+        <figure
+          aria-label={`${component.name} — ${scene.caption.toLowerCase()}, drawn from your brand`}
+          className="reference-scene"
+          key={scene.id}
+          role="img"
+        >
+          <div aria-hidden="true" className="reference-scene-body" style={{ fontFamily: ctx.font }}>
+            {scene.render(ctx, component)}
+          </div>
+          <figcaption>{scene.caption}</figcaption>
+        </figure>
+      ))}
+    </div>
+  );
+}
+
+const STATE_KINDS = new Set(["button", "field", "select", "search", "chips", "switch", "choices"]);
+
+export function hasStateRow(component: DesignComponent): boolean {
+  return STATE_KINDS.has(component.spec?.preview ?? "");
+}
+
+export function StatesRow({ brand, component }: { brand: Brand; component: DesignComponent }) {
+  const ctx = makeContext(brand, component.spec);
+  const accent = brand.tokens.colors.accent ?? "#0B6B53";
+  const frames: { id: string; label: string; style?: CSSProperties }[] = [
+    { id: "normal", label: "Normal" },
+    { id: "hover", label: "Hover", style: { filter: "brightness(0.93) saturate(1.05)" } },
+    { id: "focus", label: "Focus", style: { outline: `2px solid ${accent}`, outlineOffset: 2, borderRadius: 8 } },
+    { id: "disabled", label: "Off", style: { opacity: 0.45, filter: "grayscale(0.4)" } },
+  ];
+  return (
+    <div className="states-row" data-states-row>
+      {frames.map((frame) => (
+        <figure aria-label={`${component.name} — ${frame.label} state`} className="state-frame" key={frame.id} role="img">
+          <div aria-hidden="true" className="state-frame-body" style={{ fontFamily: ctx.font }}>
+            <span style={{ display: "inline-flex", ...frame.style }}>{stateSubject(ctx, component)}</span>
+          </div>
+          <figcaption>{frame.label}</figcaption>
+        </figure>
+      ))}
+    </div>
+  );
+}

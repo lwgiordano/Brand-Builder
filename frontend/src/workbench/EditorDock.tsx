@@ -88,6 +88,8 @@ export function EditorDock({
   onUpdateSectionOverride,
 }: EditorDockProps) {
   const failing = report ? report.results.filter((result) => result.status === "failed") : [];
+  const ruleLabel = (ruleId: string) =>
+    brand?.rules.find((rule) => rule.id === ruleId)?.label || ruleId;
 
   return (
     <aside className={`editor-dock${open ? " is-open" : ""}`} aria-label="Inspector dock">
@@ -100,8 +102,12 @@ export function EditorDock({
           <div className="checks-panel" data-checks-panel>
             <div className="proposal-counts">
               <span>{report.summary.passed} passing</span>
-              <span>{report.summary.failed} failing</span>
-              <span>{report.summary.estimated} estimated</span>
+              <span>
+                {report.summary.failed} {report.summary.failed === 1 ? "needs" : "need"} a fix
+              </span>
+              <span>
+                {report.summary.estimated} {report.summary.estimated === 1 ? "looks" : "look"} right
+              </span>
             </div>
             {failing.slice(0, 6).map((result) => (
               <button
@@ -110,8 +116,10 @@ export function EditorDock({
                 type="button"
                 onClick={() => onSelectRule(result.rule_id)}
               >
-                <Chip tone="danger">failed</Chip>
-                <span>{result.message}</span>
+                <Chip tone="danger">needs a fix</Chip>
+                <span>
+                  <strong>{ruleLabel(result.rule_id)}.</strong> {result.message}
+                </span>
               </button>
             ))}
             {!failing.length ? (
@@ -170,34 +178,44 @@ export function EditorDock({
       ) : null}
 
       {selectedRule ? (
-        <Panel title="Rule Editor" eyebrow={selectedRule.label || selectedRule.id}>
+        <Panel title="This check" eyebrow={prettyCategory(selectedRule.category)}>
           <div className="rule-sentence-editor" data-rule-sentence-editor>
-            <div className="sentence-rule is-large">
-              <span>{selectedRule.category}</span>
-              <strong>{selectedRule.metric}</strong>
-              <span>{selectedRule.assertion}</span>
-              <Chip tone={statusTone(selectedRule.status)}>{selectedRule.status}</Chip>
-            </div>
-            <p>{selectedRule.rationale}</p>
+            <strong className="rule-headline">{selectedRule.label || selectedRule.id}</strong>
+            <p>{selectedRule.description || selectedRule.rationale}</p>
+            {selectedRule.description && selectedRule.rationale ? (
+              <p className="panel-hint">{selectedRule.rationale}</p>
+            ) : null}
             <div className="scope-chip-grid">
+              <Chip tone={statusTone(selectedRule.status)}>
+                {RULE_STATUS_WORDS[selectedRule.status] ?? selectedRule.status}
+              </Chip>
               {Object.entries(selectedRule.scope).map(([key, value]) => (
-                <Chip key={key}>
-                  {key}: {String(value)}
-                </Chip>
+                <Chip key={key}>{scopeChipLabel(key, value)}</Chip>
               ))}
             </div>
             <div className="review-actions">
               <button className="primary-action" type="button" onClick={() => onSetRuleStatus(selectedRule.id, "approved")}>
                 <CheckCircle2 size={15} />
-                Approve
+                Turn on
               </button>
               <button className="ghost-action" type="button" onClick={() => onSetRuleStatus(selectedRule.id, "draft")}>
-                Draft
+                Needs review
               </button>
               <button className="ghost-action" type="button" onClick={() => onSetRuleStatus(selectedRule.id, "rejected")}>
-                Reject
+                Turn off
               </button>
             </div>
+            <Disclosure title="Advanced — how it's measured">
+              <div className="sentence-rule">
+                <span>{selectedRule.category}</span>
+                <strong>{selectedRule.metric}</strong>
+                <span>{selectedRule.assertion}</span>
+                <span>
+                  {selectedRule.target === undefined ? "" : String(selectedRule.target)}
+                  {selectedRule.unit ?? ""}
+                </span>
+              </div>
+            </Disclosure>
           </div>
         </Panel>
       ) : null}
@@ -477,4 +495,33 @@ function slotLabel(slot: string): string {
 
 function pluralize(count: number, singular: string, plural?: string): string {
   return `${count} ${count === 1 ? singular : (plural ?? `${singular}s`)}`;
+}
+
+const RULE_STATUS_WORDS: Record<string, string> = {
+  approved: "on",
+  draft: "needs review",
+  rejected: "off",
+};
+
+function prettyCategory(category: string): string {
+  const labels: Record<string, string> = {
+    accessibility: "Easy to read",
+    color: "Colors",
+    component: "Components",
+    data: "Data",
+    grid: "Layout",
+    logo: "Logo",
+    radius: "Corners",
+    slide: "Slides",
+    spacing: "Spacing",
+    typography: "Type",
+  };
+  return labels[category] ?? category;
+}
+
+function scopeChipLabel(key: string, value: string | number | boolean): string {
+  if (value === "*" || value === "") return "everywhere";
+  if (key === "surface") return `on ${value}`;
+  if (key === "token") return `for the ${value} color`;
+  return `${key}: ${String(value)}`;
 }

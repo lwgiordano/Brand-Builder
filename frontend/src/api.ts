@@ -111,10 +111,15 @@ export function applyDrafts(slug: string, proposal: AiProposal): Promise<BrandPa
   });
 }
 
-export function proposeEdit(slug: string, command: string, provider: string): Promise<{ proposal: AiProposal }> {
+export function proposeEdit(
+  slug: string,
+  command: string,
+  provider: string,
+  componentId?: string,
+): Promise<{ proposal: AiProposal }> {
   return requestJson(`/api/brands/${slug}/ai/edit`, {
     method: "POST",
-    body: JSON.stringify({ command, provider }),
+    body: JSON.stringify({ command, provider, component_id: componentId ?? null }),
   });
 }
 

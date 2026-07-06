@@ -1,15 +1,24 @@
-import { ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
-import { useMemo } from "react";
-import type { Brand, DesignComponent, DesignInventory, Rule } from "../types";
+import { ChevronLeft, ChevronRight, Loader2, Sparkles, Wand2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import type { AiProposal, Brand, DesignComponent, DesignInventory, Rule } from "../types";
 import { rulesForComponent } from "../app/inventory";
-import { SpecStepper, SwatchSelect } from "./controls";
+import { SpecStepper, SwatchSelect, TextField } from "./controls";
 import {
   COMPONENT_CATEGORY_LABELS,
   COMPONENT_CATEGORY_ORDER,
   ComponentListField,
   REVIEW_STATUSES,
 } from "./model";
-import { ComponentPreview, propLabel, propOptions, semanticRoles } from "./preview";
+import {
+  ComponentPreview,
+  hasStateRow,
+  propLabel,
+  propOptions,
+  ReferenceScenes,
+  referenceScenes,
+  semanticRoles,
+  StatesRow,
+} from "./preview";
 import { Chip, Disclosure, Panel, statusTone } from "./primitives";
 import type { SpecSaveState } from "./WorkbenchApp";
 
@@ -29,6 +38,10 @@ export type ComponentReviewProps = {
   selectedComponentId: string | null;
   busy: string | null;
   specSaveState: SpecSaveState;
+  reviseProposal: AiProposal | null;
+  onProposeRevise: (componentId: string, command: string) => void;
+  onApplyRevise: () => void;
+  onSkipRevise: () => void;
   onSelectComponent: (componentId: string) => void;
   onSelectRule: (ruleId: string) => void;
   onCompleteSystem: () => void;
@@ -61,6 +74,10 @@ export function ComponentReview({
   selectedComponentId,
   busy,
   specSaveState,
+  reviseProposal,
+  onProposeRevise,
+  onApplyRevise,
+  onSkipRevise,
   onSelectComponent,
   onSelectRule,
   onCompleteSystem,
@@ -79,6 +96,39 @@ export function ComponentReview({
   const total = ordered.length;
   const approvedCount = ordered.filter((component) => component.status === "approved").length;
   const linkedRules = selected ? rulesForComponent(selected, rules) : [];
+  const specProps = selected?.spec?.props ?? {};
+
+  // One-tap revise chips: each press makes one snapped step on a prop this
+  // component actually has, through the same save path as the steppers.
+  function stepPreset(key: string, direction: 1 | -1) {
+    if (!selected) return;
+    const current = specProps[key];
+    if (typeof current !== "number") return;
+    const sorted = [...new Set([...propOptions(brand, key), current])].sort((a, b) => a - b);
+    const next = sorted[sorted.indexOf(current) + direction];
+    if (next !== undefined) onUpdateComponentSpec(selected.id, key, next);
+  }
+  const firstNumericKey = (...keys: string[]) =>
+    keys.find((key) => typeof specProps[key] === "number") ?? null;
+  const weightKey = firstNumericKey("font_weight");
+  const radiusKey = firstNumericKey("radius");
+  const sizeKey = firstNumericKey("height", "padding", "padding_y", "padding_x");
+  const fillKey = ["fill", "background"].find((key) => typeof specProps[key] === "string") ?? null;
+  const reviseChips = [
+    weightKey ? { id: "bolder", label: "Bolder", run: () => stepPreset(weightKey, 1) } : null,
+    weightKey ? { id: "lighter", label: "Lighter", run: () => stepPreset(weightKey, -1) } : null,
+    radiusKey ? { id: "rounder", label: "Rounder", run: () => stepPreset(radiusKey, 1) } : null,
+    radiusKey ? { id: "sharper", label: "Sharper", run: () => stepPreset(radiusKey, -1) } : null,
+    sizeKey ? { id: "compact", label: "More compact", run: () => stepPreset(sizeKey, -1) } : null,
+    sizeKey ? { id: "roomier", label: "Roomier", run: () => stepPreset(sizeKey, 1) } : null,
+    fillKey && selected
+      ? { id: "stronger", label: "Stronger color", run: () => onUpdateComponentSpec(selected.id, fillKey, "accent") }
+      : null,
+    fillKey && selected
+      ? { id: "calmer", label: "Calmer color", run: () => onUpdateComponentSpec(selected.id, fillKey, "muted") }
+      : null,
+  ].filter((chip): chip is { id: string; label: string; run: () => void } => chip !== null);
+  const scenes = selected ? referenceScenes(selected) : [];
 
   function step(direction: -1 | 1) {
     const target = ordered[index + direction];
@@ -194,6 +244,22 @@ export function ComponentReview({
           <div className="lab-canvas" data-component-canvas>
             <ComponentPreview brand={brand} component={selected} />
           </div>
+          {scenes.length || hasStateRow(selected) ? (
+            <div className="reference-strip" data-reference-strip>
+              {scenes.length ? (
+                <>
+                  <h4>See it in use</h4>
+                  <ReferenceScenes brand={brand} component={selected} />
+                </>
+              ) : null}
+              {hasStateRow(selected) ? (
+                <>
+                  <h4>How it behaves</h4>
+                  <StatesRow brand={brand} component={selected} />
+                </>
+              ) : null}
+            </div>
+          ) : null}
           <div className="lab-canvas-meta">
             <div className="chip-row">
               {selected.surfaces.map((surface) => (
@@ -203,7 +269,7 @@ export function ComponentReview({
             {linkedRules.length ? (
               <div className="component-rule-strip">
                 <span className="rule-strip-label">
-                  {linkedRules.length === 1 ? "1 rule watches this" : `${linkedRules.length} rules watch this`}
+                  {linkedRules.length === 1 ? "1 check watches this" : `${linkedRules.length} checks watch this`}
                 </span>
                 {linkedRules.slice(0, 6).map((rule) => (
                   <button key={rule.id} type="button" onClick={() => onSelectRule(rule.id)}>
@@ -216,6 +282,33 @@ export function ComponentReview({
         </section>
 
         <aside aria-label={`Edit ${selected.name}`} className="review-inspector">
+          <Panel title="Make it feel…" eyebrow="One tap — saved instantly">
+            <div className="revise-panel" data-revise-panel>
+              {reviseChips.length ? (
+                <div className="revise-chips">
+                  {reviseChips.map((chip) => (
+                    <Chip key={chip.id} onClick={chip.run}>
+                      {chip.label}
+                    </Chip>
+                  ))}
+                </div>
+              ) : (
+                <p className="panel-hint">This piece has no quick presets — use the controls below.</p>
+              )}
+              <Disclosure title="Describe a change">
+                <ReviseBox
+                  busy={busy}
+                  componentId={selected.id}
+                  key={selected.id}
+                  proposal={reviseProposal}
+                  onApply={onApplyRevise}
+                  onPropose={onProposeRevise}
+                  onSkip={onSkipRevise}
+                />
+              </Disclosure>
+            </div>
+          </Panel>
+
           {selected.spec ? (
             <Panel title="Design" eyebrow={specSaveLabel(specSaveState, selected.name)}>
               <div className="design-controls" data-design-controls>
@@ -284,7 +377,7 @@ export function ComponentReview({
                 />
               </Disclosure>
 
-              <Disclosure title="Tokens and rules">
+              <Disclosure title="Tokens and checks">
                 <ChipEditor
                   label="Token refs"
                   values={selected.token_refs ?? []}
@@ -293,12 +386,11 @@ export function ComponentReview({
                 />
                 {linkedRules.length ? (
                   <div className="linked-rules">
-                    <strong>Linked rules</strong>
+                    <strong>Checks on this piece</strong>
                     {linkedRules.map((rule) => (
                       <div className="sentence-rule" key={rule.id}>
-                        <span>{rule.category}</span>
-                        <strong>{rule.metric}</strong>
-                        <span>{rule.assertion}</span>
+                        <strong>{rule.label || rule.id}</strong>
+                        <span>{rule.description || rule.rationale}</span>
                         <Chip tone={statusTone(rule.status)}>{rule.status}</Chip>
                       </div>
                     ))}
@@ -322,6 +414,70 @@ export function specSaveLabel(state: SpecSaveState, componentName: string): stri
   if (state === "saved") return `${componentName} — saved`;
   if (state === "error") return `${componentName} — couldn't save`;
   return componentName;
+}
+
+function ReviseBox({
+  componentId,
+  busy,
+  proposal,
+  onPropose,
+  onApply,
+  onSkip,
+}: {
+  componentId: string;
+  busy: string | null;
+  proposal: AiProposal | null;
+  onPropose: (componentId: string, command: string) => void;
+  onApply: () => void;
+  onSkip: () => void;
+}) {
+  const [text, setText] = useState("");
+  const patchCount = proposal?.patch?.length ?? 0;
+  return (
+    <div className="revise-box" data-revise-box>
+      <TextField
+        label="What should change?"
+        multiline
+        placeholder="e.g. rounder corners and a bit bolder"
+        value={text}
+        onChange={setText}
+      />
+      <div className="revise-actions">
+        <button
+          className="ghost-action"
+          disabled={!text.trim() || busy === "revise-propose"}
+          type="button"
+          onClick={() => onPropose(componentId, text)}
+        >
+          {busy === "revise-propose" ? <Loader2 className="spin" size={15} /> : <Wand2 size={15} />}
+          Suggest it
+        </button>
+      </div>
+      {proposal ? (
+        <article className="proposal-card" data-revise-proposal>
+          <header>
+            <strong>{proposal.summary}</strong>
+          </header>
+          <div className="proposal-counts">
+            <span>{proposal.mode === "heuristic" ? "Instant suggestion — no AI needed" : "AI suggestion"}</span>
+            {typeof proposal.confidence === "number" ? <span>{Math.round(proposal.confidence * 100)}% sure</span> : null}
+            <span>
+              {patchCount} change{patchCount === 1 ? "" : "s"}
+            </span>
+          </div>
+          <div className="revise-actions">
+            <button className="primary-action" disabled={busy === "revise-apply"} type="button" onClick={onApply}>
+              {busy === "revise-apply" ? <Loader2 className="spin" size={15} /> : null}
+              Make this change
+            </button>
+            <button className="ghost-action" type="button" onClick={onSkip}>
+              Skip
+            </button>
+          </div>
+        </article>
+      ) : null}
+    </div>
+  );
 }
 
 export function ChipEditor({

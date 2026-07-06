@@ -2154,10 +2154,361 @@ button.lab-chip:hover {
 
 /* — style settings — */
 
-.role-grid {
+.color-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--s-3);
+}
+
+.color-card {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.color-card.is-open {
+  border-color: var(--border-strong);
+}
+
+.color-example {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 64px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  padding: var(--s-2);
+}
+
+.color-example .ex-text {
+  font-size: 15px;
+  font-weight: var(--w-semibold);
+}
+
+.color-example .ex-card {
+  width: 56px;
+  height: 36px;
+  border: 1px solid;
+  border-radius: var(--r-sm);
+}
+
+.color-example .ex-card-labeled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 72px;
+  height: 40px;
+  font-size: var(--t-caption);
+  font-weight: var(--w-semibold);
+}
+
+.color-example .ex-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 14px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: var(--w-semibold);
+}
+
+.color-example .ex-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: var(--t-caption);
+  font-weight: var(--w-semibold);
+}
+
+.color-example .ex-swatch {
+  width: 72px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+}
+
+.color-card-meta {
+  display: grid;
+  gap: 2px;
+}
+
+.color-card-meta strong {
+  font-size: var(--t-body-sm);
+  color: var(--text-strong);
+}
+
+.color-card-meta span {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.color-card-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.color-card-foot code {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.color-card-foot .change-color {
+  margin-left: auto;
+}
+
+.contrast-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--t-caption);
+}
+
+.contrast-note.is-good {
+  color: var(--success, #1c6b46);
+}
+
+.contrast-note.is-bad {
+  color: var(--warning);
+}
+
+.color-card-editor {
+  border-top: 1px solid var(--border);
+  padding-top: var(--s-2);
+}
+
+.role-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: var(--s-3);
+}
+
+/* the standard web type scale as live specimens */
+
+.type-ladder {
+  display: grid;
+}
+
+.type-ladder-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s-3);
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding: var(--s-2) 0;
+}
+
+.type-ladder-row:first-child {
+  border-top: 0;
+}
+
+.type-specimen {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.type-specimen p {
+  margin: 0;
+  overflow-wrap: break-word;
+  color: var(--text-strong);
+}
+
+.type-specimen-meta {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+/* keep the stepper's aria labels but let the specimen meta carry the visible name */
+.type-ladder-row .spec-stepper {
+  position: relative;
+}
+
+.type-ladder-row .stepper-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* see-it-in-use reference strip + states (step 3) */
+
+.reference-strip {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.reference-strip h4 {
+  margin: 0;
+  font-size: var(--t-caption);
+  font-weight: var(--w-semibold);
+  color: var(--text-muted);
+}
+
+.reference-scenes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--s-2);
+}
+
+.reference-scene {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.reference-scene-body {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-muted);
+  padding: var(--s-2);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+}
+
+.reference-scene figcaption,
+.state-frame figcaption {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+}
+
+.states-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--s-2);
+}
+
+.state-frame {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.state-frame-body {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  padding: var(--s-3) var(--s-2);
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.state-frame figcaption {
+  text-align: center;
+}
+
+.rule-headline {
+  font-size: var(--t-body-sm);
+  font-weight: var(--w-semibold);
+  color: var(--text-strong);
+}
+
+/* make-it-feel revise panel (step 3 inspector) */
+
+.revise-panel {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.revise-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+}
+
+.revise-box {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.revise-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: center;
+}
+
+/* grouped plain-English checks */
+
+.check-groups {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.check-group {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.check-group summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 44px;
+  padding: 0 var(--s-3);
+  cursor: pointer;
+  list-style: none;
+}
+
+.check-group summary::-webkit-details-marker {
+  display: none;
+}
+
+.check-group summary svg {
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+.check-group[open] > summary svg {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .check-group summary svg {
+    transition: none;
+  }
+}
+
+.check-group-title {
+  font-size: var(--t-body-sm);
+  font-weight: var(--w-semibold);
+  color: var(--text-strong);
+}
+
+.check-rollup {
+  margin-left: auto;
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.check-rollup.has-needs {
+  color: var(--warning);
+  font-weight: var(--w-semibold);
+}
+
+.check-group-body {
+  display: grid;
+  gap: var(--s-1);
+  padding: 0 var(--s-3) var(--s-2);
 }
 
 .color-field {
@@ -2552,6 +2903,11 @@ button.lab-chip:hover {
   .intake-grid,
   .style-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .type-ladder-row {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
   }
 
   .creation-layout {

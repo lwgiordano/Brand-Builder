@@ -28,7 +28,7 @@ export const STEPS: StepDefinition[] = [
   {
     id: "style",
     label: "Set your style",
-    description: "Your colors, type, and spacing — plus the rules that keep everything on brand.",
+    description: "Your colors, type, and spacing — plus the automatic checks that keep everything on brand.",
     Icon: Palette,
   },
   {

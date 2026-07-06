@@ -45,20 +45,40 @@ the 1260px drawer as before; everything stacks at 900px).
    "We found these colors" summary (reads `metadata.extracted_colors`, which the backend now
    fills from image pixels via Pillow and from SVG fills), and the **Review Queue** (provider
    select, Extract proposals, Approve/Reject, advanced JSON) folded in from the old dock.
-2. **Set your style** (`StyleSettings.tsx`) — foundations as *editable settings*: per-role color
-   fields (`ColorField`: native color input + hex + suggestion swatches drawn from `source_*`
-   tokens and extracted image colors), type-size steppers + font field, spacing/radius steppers,
-   logo wordmark/height/placement — all persisted through the same optimistic debounced
-   whole-brand save as spec edits (`handleUpdateToken` shares the sequence-guarded pipeline).
-   Below: every rule as a plain sentence with live pass/fail chips, failures first.
+2. **Set your style** (`StyleSettings.tsx`, v5 visual pass) — foundations shown *as they're
+   used*, not as raw values. **Color cards** (`data-color-cards`): one card per required role,
+   each with a rendered usage example (accent → mini Save button, text → "Aa" on the page
+   background, status roles → solid chips with auto-readable ink via `readableOn`), a
+   plain-words name (`ROLE_HELP`), the hex, a live **contrast note** ("Easy/Hard to read",
+   WCAG 4.5 threshold, `contrastRatio` exported), and an inline "Change" editor (the old
+   `ColorField` + extracted-color suggestions); extra roles fold into "More colors". **Type is
+   the standard web ladder** (`data-type-ladder`): H1/H2/H3/Body/Small live specimens in the
+   brand font with snapped size steppers (the backend guarantees `sizes.h1/h2/h3` — see below);
+   slide/special sizes fold away. **Automatic checks** (`data-check-groups`): rules grouped by
+   what they govern (Colors / Easy to read & use / Type / Spacing & shape / Logo / Slides), one
+   calm `details` row per group with a rollup ("6 checks · all passing" / "2 need a look",
+   failing groups start open, frozen on mount), rows read as `label` + `description` sentences —
+   never metric/assertion jargon. **Component/data-category rules are filtered out of Step 2**;
+   they live with each component in Step 3.
 3. **Your components** (`ComponentReview.tsx`) — a **guided one-at-a-time walkthrough**: the
    "Component N of M" counter (aria-live) is the accessible progress signal over an aria-hidden
    segment bar; Previous/Next browse (they never change status — approval stays the explicit
    chip picker); "Jump to a piece" is a disclosure listing every component by category; the
    editor is **docked beside the dotted canvas inside the step** (reference pattern #206 — never
-   a modal, never the drawer): Design steppers/swatches, status chips, then detail disclosures.
-   Component editing no longer lives in the EditorDock. ←/→ arrows step when focus is in the
-   walkthrough. "Complete my system" sits in the walkthrough header.
+   a modal, never the drawer). ←/→ arrows step when focus is in the walkthrough. v5 adds, under
+   the canvas, a **"See it in use" reference strip** (`data-reference-strip`): 2–3 mini-scenes
+   per component family composed in `preview.tsx` from the live spec (signup form / card CTA /
+   top bar for buttons; settings panel, report header, etc.; full-surface kinds skip the strip)
+   plus a **"How it behaves" states row** (`data-states-row`: Normal/Hover/Focus/Off via
+   deterministic style treatments) for interactive kinds. The inspector opens with **"Make it
+   feel…"** (`data-revise-panel`): one-tap preset chips (Bolder/Lighter, Rounder/Sharper, More
+   compact/Roomier, Stronger/Calmer color) that make one snapped step on props the component
+   actually has through the normal spec-save path, and a **"Describe a change"** box
+   (`data-revise-box`) that POSTs `/ai/edit` with `component_id` and shows a proposal card
+   (summary, "Instant suggestion — no AI needed" for the heuristic fallback vs "AI suggestion",
+   confidence, change count) with **Make this change** (`/patch/apply` + full payload refresh +
+   Undo toast) or **Skip**. A pending suggestion is cleared on any component switch. Linked
+   rules render as label + description sentences ("Checks on this piece").
 4. **Make things** (`CreationStudio.tsx`) — the creation system. "New design" wizard: type
    (deck/report/landing) → proven skeleton template (`GET /api/templates`) → optional pasted
    content (backend structurer maps headings→titles, dashes→bullets, "label: 42%"→numbers).
@@ -81,6 +101,18 @@ the 1260px drawer as before; everything stacks at 900px).
    backend merges exceptions over `_spec_props` in `creation_html` (byte-stable) and the pptx
    export honors the KPI-tile subset (the only piece with a deck-shape counterpart).
 
+## Plain-English + ladder contract with the backend (v5)
+
+The backend enriches **every rule with `label` + `description` at load time**
+(`store.load_brand` → `rule_text.enrich_rule_text`; authored text always wins) and guarantees
+the **web type ladder** (`sizes.h1/h2/h3/caption` derived from `body × scale_ratio`, capped and
+monotone, setdefault-only). The frontend therefore renders `rule.label`/`rule.description`
+everywhere a human sees a rule — Step 2 groups, Step 3 linked checks, the dock's "This check"
+panel (raw metric/assertion demoted to an "Advanced — how it's measured" disclosure) — and the
+ladder keys always exist. `/ai/edit` accepts an optional `component_id`; without a CLI provider
+it falls back to a deterministic per-component keyword patch (`heuristic_component_edit`) that
+only touches spec props the component has, so the describe box works fully offline.
+
 ## State/save machinery (`WorkbenchApp.tsx`)
 
 Two parallel optimistic pipelines, both 700 ms debounced with sequence guards against stale
@@ -102,26 +134,33 @@ picker; 24px + 4px halo documented dense-picker exception), `ChoiceChips` (singl
 ## Progressive disclosure
 
 Essentials visible, depth on demand (#144): the stage heading is a compact line (one eye-winner
-goes to the canvas), passing checks collapse behind "Show N passing checks" in Set your style,
-advanced JSON/evidence stay behind disclosures, and each design piece's controls sit behind an
-"Edit …" disclosure under its badge row.
+goes to the canvas), checks roll up into per-group rows whose bodies collapse (failing groups
+start open), color-card editors open one at a time, slide/special type sizes fold away, advanced
+JSON/evidence stay behind disclosures, and each design piece's controls sit behind an "Edit …"
+disclosure under its badge row.
 
-## Quality bar (verified 2026-07-06)
+## Quality bar (verified 2026-07-06, v5)
 
-axe-core **0 violations** across all four steps, the walkthrough, the pieces panel, the creation
-editor, and 375px mobile; 0px horizontal overflow at 1440/768/375; proven in-browser: walkthrough
-nav + jump list + in-step edit repaint, exception isolation between two designs, Everywhere
-propagation to sibling designs, reset-to-system, a rapid scope-toggled edit burst with zero
-failures, and pasted-content → deck → edit → undo → PowerPoint export; backend suite 63 passing
-(adds exception round-trip/isolation/undo/schema guards + pptx exception read-back).
+axe-core **0 violations** across all four steps, the walkthrough (with reference strip + revise
+panel), the pieces panel, the creation editor, and 375px mobile; 0px horizontal overflow at
+1440/768/375; proven in-browser: color-card editor open/change, H1 ladder stepper repaints the
+specimen, check groups expand to sentences with zero visible metric jargon, dock "This check"
+headline + advanced disclosure, 3 reference scenes + 4 state frames on Buttons, Rounder/Sharper
+preset chips step the live example and back, and the describe box round-trip (heuristic proposal
+→ apply → example repaints → revert) — plus everything from v4 (walkthrough nav, exception
+isolation, Everywhere propagation, pptx export). Backend suite **70 passing** (adds serve-time
+rule-text enrichment, ladder derivation/monotony, per-component heuristic patch targeting, the
+`/ai/edit` `component_id` contract, and styleguide ladder/sentence rendering).
 
 ## Known deferred work
 
 Drag-reorder (buttons only today), image slots inside creations, AI-assisted content
-structuring (deterministic only), per-variant component spec overrides, native pptx charts
-(bars are shapes), server-side PDF rendering (reports use browser print), rule creation, and the
-provider preflight ping. `app/validation.ts` helpers and `app/rules.ts` `createBlankRule` are
-currently uncalled (kept for the rule-creation phase).
+structuring for creations (deterministic only; per-component AI revise shipped in v5),
+per-variant component spec overrides, true per-renderer hover/disabled variants (the states row
+uses deterministic style treatments), native pptx charts (bars are shapes), server-side PDF
+rendering (reports use browser print), rule creation, and the provider preflight ping.
+`app/validation.ts` helpers and `app/rules.ts` `createBlankRule` are currently uncalled (kept
+for the rule-creation phase).
 
 ## Operator rules
 
