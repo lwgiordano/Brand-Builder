@@ -69,3 +69,9 @@ This file is `merge=union` in `.gitattributes` so concurrent branch entries comb
 **Intent:** Close the v4 audit loop with the standing fix-and-reverify discipline; one finding was a doc-read race, already resolved at commit time
 **Knowledge:** stage-heading h2 must carry the shared heading tokens explicitly now that the shared selector list no longer includes it; min-height beats padding math for small-text hit targets; walkthrough arrow handler ignores events from .review-inspector and .jump-list
 
+## 2026-07-06T17:25:03Z — NO_SESSION — 2862e58
+**Summary:** v5 visual pass: color example cards, standard web type ladder, grouped plain-English checks, per-component reference scenes + states, one-tap revise chips and an offline-capable AI describe box
+**Files:** frontend/src/workbench/StyleSettings.tsx,frontend/src/workbench/ComponentReview.tsx,frontend/src/workbench/preview.tsx,frontend/src/workbench/EditorDock.tsx,frontend/src/workbench/WorkbenchApp.tsx,frontend/src/api.ts,frontend/src/workbench.css,frontend/index.html,docs/knowledge/01_brand_system_studio_frontend.md
+**Intent:** User feedback on v4: still too confusing — wanted everything simpler and more visual, colors shown as examples, type the normal web way, rules plain and not overwhelming, component content in the components step, and per-component visual references plus AI revise options
+**Knowledge:** Backend now enriches every rule with label+description at load (rule_text.py) and guarantees sizes.h1/h2/h3 from body x scale_ratio; /ai/edit takes component_id with a deterministic per-component fallback so the describe box works offline; step 2 filters out component/data rule categories; ex-chip examples use solid fills with readableOn ink after a 375px axe contrast catch; backend suite 70 passing
+
