@@ -57,3 +57,9 @@ This file is `merge=union` in `.gitattributes` so concurrent branch entries comb
 **Intent:** Close the audit loop on the pipeline restructure with the same fix-and-reverify discipline as v1
 **Knowledge:** Layout-contract test no longer asserts .input-library; rule-plain-name uses the 32px+6px-halo pattern; probe8 measured 44px and axe-clean after fixes
 
+## 2026-07-06T15:07:16Z — NO_SESSION — 5d9fcab
+**Summary:** Guided one-at-a-time component walkthrough and edit-the-system-from-outputs with whole-design exceptions (bundle v4)
+**Files:** frontend/src/workbench/ComponentReview.tsx,frontend/src/workbench/EditorDock.tsx,frontend/src/workbench/SystemCanvas.tsx,frontend/src/workbench/StyleSettings.tsx,frontend/src/workbench/CreationStudio.tsx,frontend/src/workbench/WorkbenchApp.tsx,frontend/src/types.ts,frontend/src/workbench.css,docs/knowledge/01_brand_system_studio_frontend.md
+**Intent:** Match the user's flow exactly: generate everything from brand inputs, review components one by one on a canvas with docked controls, then edit the system from inside finished outputs with an Everywhere/Just-this-design scope and visible, resettable exceptions
+**Knowledge:** Creation exceptions are flat component.prop keys (schema propertyNames guard) merged over _spec_props in creation_html (byte-stable) and honored by pptx for KPI tiles; walkthrough position derives from selectedComponentId against one flattened category order; component editing left the dock (reference pattern 206); probe9 proved isolation/propagation/reset/burst with axe 0
+
