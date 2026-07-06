@@ -51,3 +51,9 @@ This file is `merge=union` in `.gitattributes` so concurrent branch entries comb
 **Intent:** Rebuild the whole app around the user's system: intake anything (pictures feed the palette), edit foundations as settings, shape components on the canvas, then pour content into proven skeletons and deep-edit real decks/reports/landing pages with live previews and real exports
 **Knowledge:** Backend gains creations store (per-design undo snapshots), templates.py skeleton library, creation_html renderer (byte-stable, token+spec styled), pptx_export (on-demand, not byte-stable by design), Pillow image palettes into source text, artifact regex whitelist; two debounced save pipelines (brand + creation) with sequence guards; layout-contract test asserts the 4-step IA; verified axe-0 and probe-proven 2026-07-06
 
+## 2026-07-06T03:41:12Z — NO_SESSION — 9ebff0d
+**Summary:** v2 design-audit WARN findings fixed: orphaned rail CSS removed, 44px rule-name targets, humanized placement chips, tokenized section index
+**Files:** frontend/src/workbench.css,frontend/src/workbench/StyleSettings.tsx
+**Intent:** Close the audit loop on the pipeline restructure with the same fix-and-reverify discipline as v1
+**Knowledge:** Layout-contract test no longer asserts .input-library; rule-plain-name uses the 32px+6px-halo pattern; probe8 measured 44px and axe-clean after fixes
+
