@@ -45,3 +45,9 @@ This file is `merge=union` in `.gitattributes` so concurrent branch entries comb
 **Intent:** Close the audit loop on pipeline v1: narrow canvases shrink scaled mocks instead of cropping, every rail item reaches the 44px target, and the dense swatch-picker 32px exception is documented rather than silent
 **Knowledge:** Scale() in preview.tsx observes its own width and clamps scale to width/w; swatch halos must stay inside half the gap (documented in workbench.css + knowledge doc); probe6_auditfix measured mock==canvas at 375px, rail hit 44px, axe clean
 
+## 2026-07-06T03:32:13Z — NO_SESSION — 53b3dae
+**Summary:** v2 pipeline restructure: four-step IA (add brand / set style / components / make things) with a creation studio, template skeletons, live previews, and PowerPoint export
+**Files:** frontend/src/workbench/BrandIntake.tsx,frontend/src/workbench/StyleSettings.tsx,frontend/src/workbench/CreationStudio.tsx,frontend/src/workbench/controls.tsx,frontend/src/workbench/SystemCanvas.tsx,frontend/src/workbench/EditorDock.tsx,frontend/src/workbench/WorkbenchApp.tsx,frontend/src/workbench/model.ts,frontend/src/types.ts,frontend/src/api.ts,frontend/src/workbench.css,docs/knowledge/01_brand_system_studio_frontend.md
+**Intent:** Rebuild the whole app around the user's system: intake anything (pictures feed the palette), edit foundations as settings, shape components on the canvas, then pour content into proven skeletons and deep-edit real decks/reports/landing pages with live previews and real exports
+**Knowledge:** Backend gains creations store (per-design undo snapshots), templates.py skeleton library, creation_html renderer (byte-stable, token+spec styled), pptx_export (on-demand, not byte-stable by design), Pillow image palettes into source text, artifact regex whitelist; two debounced save pipelines (brand + creation) with sequence guards; layout-contract test asserts the 4-step IA; verified axe-0 and probe-proven 2026-07-06
+
