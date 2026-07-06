@@ -1,160 +1,156 @@
-import { CheckCircle2, ClipboardList, Loader2, Minus, Plus, RotateCcw, SlidersHorizontal, Sparkles, XCircle } from "lucide-react";
+import { CheckCircle2, RotateCcw, ShieldCheck, SlidersHorizontal, Trash2 } from "lucide-react";
 import type {
-  AiProposal,
   Brand,
+  Creation,
+  CreationSection,
   DesignComponent,
   DesignInventory,
-  ProviderStatus,
   Rule,
+  SkeletonDefinition,
   SourceRecord,
-  SpecPropValue,
-  SurfacePack,
+  ValidationReport,
 } from "../types";
 import { rulesForComponent } from "../app/inventory";
+import { ChoiceChips, SpecStepper, SwatchSelect, TextField } from "./controls";
 import { ComponentListField, REVIEW_STATUSES } from "./model";
 import { propLabel, propOptions, semanticRoles } from "./preview";
 import { Chip, Disclosure, Panel, statusTone } from "./primitives";
 import type { SpecSaveState } from "./WorkbenchApp";
 
+/**
+ * The right-hand inspector. Contextual panels: machine checks, the Design
+ * controls for the selected component, the "This part" editor for the
+ * selected section of a creation, rule details, evidence, and undo.
+ */
+
 type EditorDockProps = {
   brand: Brand | null;
   inventory: DesignInventory | null;
   sources: SourceRecord[];
-  selectedSource: SourceRecord | null;
-  selectedPack: SurfacePack | null;
+  report: ValidationReport | null;
   selectedComponent: DesignComponent | null;
   selectedRule: Rule | null;
-  proposal: AiProposal | null;
-  providers: ProviderStatus[];
-  provider: string;
+  creation: Creation | null;
+  selectedSection: CreationSection | null;
+  sectionSkeleton: SkeletonDefinition | null;
+  overrideChoices: Record<string, string[]>;
   busy: string | null;
   open: boolean;
   specSaveState: SpecSaveState;
-  onProviderChange: (provider: string) => void;
-  onAnalyzeSource: (sourceId: string) => void;
-  onApplyProposal: () => void;
-  onRejectProposal: () => void;
+  creationSaveLabel: string;
   onUndo: () => void;
   onUpdateComponent: (componentId: string, patch: Partial<DesignComponent>) => void;
-  onUpdateComponentSpec: (componentId: string, prop: string, value: SpecPropValue) => void;
+  onUpdateComponentSpec: (componentId: string, prop: string, value: number | string | boolean) => void;
   onToggleComponentValue: (componentId: string, field: ComponentListField, value: string) => void;
   onSetRuleStatus: (ruleId: string, status: Rule["status"]) => void;
+  onSelectRule: (ruleId: string) => void;
+  onUpdateSectionContent: (sectionId: string, slot: string, value: unknown) => void;
+  onUpdateSectionOverride: (sectionId: string, key: string, value: string) => void;
+};
+
+const OVERRIDE_LABELS: Record<string, string> = {
+  align: "Line things up",
+  tone: "Background mood",
+  density: "Breathing room",
+};
+
+const OVERRIDE_OPTION_LABELS: Record<string, Record<string, string>> = {
+  align: { start: "Left", center: "Center" },
+  tone: { default: "Page", brand: "Brand color", contrast: "Dark" },
+  density: { cozy: "Cozy", comfortable: "Comfortable", spacious: "Spacious" },
 };
 
 export function EditorDock({
   brand,
   inventory,
   sources,
-  selectedSource,
-  selectedPack,
+  report,
   selectedComponent,
   selectedRule,
-  proposal,
-  providers,
-  provider,
+  creation,
+  selectedSection,
+  sectionSkeleton,
+  overrideChoices,
   busy,
   open,
   specSaveState,
-  onProviderChange,
-  onAnalyzeSource,
-  onApplyProposal,
-  onRejectProposal,
+  creationSaveLabel,
   onUndo,
   onUpdateComponent,
   onUpdateComponentSpec,
   onToggleComponentValue,
   onSetRuleStatus,
+  onSelectRule,
+  onUpdateSectionContent,
+  onUpdateSectionOverride,
 }: EditorDockProps) {
   const linkedRules = brand && selectedComponent ? rulesForComponent(selectedComponent, brand.rules) : [];
+  const failing = report ? report.results.filter((result) => result.status === "failed") : [];
+
   return (
-    <aside className={`editor-dock${open ? " is-open" : ""}`} aria-label="Review and editor dock">
-      <Panel title="Review Queue" eyebrow="Nothing canonical until approved">
-        <label className="provider-label">
-          <span>AI provider</span>
-          <select aria-label="AI provider" value={provider} onChange={(event) => onProviderChange(event.target.value)}>
-            {providers.map((item) => (
-              <option disabled={!item.available || !item.authenticated} key={item.id} value={item.id}>
-                {item.label}
-                {!item.available || !item.authenticated ? " — unavailable" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {selectedSource ? (
-          <div className="review-source" data-review-queue>
-            <strong>{selectedSource.name}</strong>
-            <small>{selectedSource.kind}</small>
-            <button
-              className="primary-action"
-              type="button"
-              onClick={() => onAnalyzeSource(selectedSource.id)}
-              disabled={busy === `analyze:${selectedSource.id}`}
-            >
-              {busy === `analyze:${selectedSource.id}` ? <Loader2 className="spin" size={15} /> : <Sparkles size={15} />}
-              Extract proposals
-            </button>
-          </div>
-        ) : null}
-
-        {proposal ? (
-          <article className="proposal-card">
-            <header>
-              <Chip tone="warn">pending</Chip>
-              <strong>{proposal.summary}</strong>
-            </header>
+    <aside className={`editor-dock${open ? " is-open" : ""}`} aria-label="Inspector dock">
+      {report ? (
+        <Panel
+          title="Checks"
+          eyebrow={failing.length ? `${failing.length} failing` : "All good"}
+          actions={<ShieldCheck size={15} />}
+        >
+          <div className="checks-panel" data-checks-panel>
             <div className="proposal-counts">
-              <span>{pluralize(proposal.rules?.length ?? 0, "rule")}</span>
-              <span>{pluralize(proposal.patch?.length ?? 0, "patch", "patches")}</span>
-              <span>
-                {typeof proposal.confidence === "number"
-                  ? `${Math.round(proposal.confidence * 100)}% confidence`
-                  : proposal.mode === "heuristic"
-                    ? "deterministic"
-                    : "unscored"}
-              </span>
+              <span>{report.summary.passed} passing</span>
+              <span>{report.summary.failed} failing</span>
+              <span>{report.summary.estimated} estimated</span>
             </div>
-            {proposal.validation_impact ? <p>{proposal.validation_impact}</p> : null}
-            <div className="review-actions">
-              <button className="primary-action" type="button" onClick={onApplyProposal} disabled={busy === "apply-proposal"}>
-                <CheckCircle2 size={15} />
-                Approve
+            {failing.slice(0, 6).map((result) => (
+              <button
+                className="check-row"
+                key={`${result.rule_id}-${JSON.stringify(result.scope)}`}
+                type="button"
+                onClick={() => onSelectRule(result.rule_id)}
+              >
+                <Chip tone="danger">failed</Chip>
+                <span>{result.message}</span>
               </button>
-              <button className="ghost-action" type="button" onClick={onRejectProposal}>
-                <XCircle size={15} />
-                Reject
-              </button>
-            </div>
-            <Disclosure title="Advanced proposal JSON">
-              <pre>{JSON.stringify(proposal, null, 2)}</pre>
-            </Disclosure>
-          </article>
-        ) : (
-          <div className="empty-hint">
-            <ClipboardList size={18} />
-            <span>Select a source and extract proposals to build the queue.</span>
+            ))}
+            {!failing.length ? (
+              <p className="panel-hint">Everything you've made passes your brand rules today.</p>
+            ) : null}
           </div>
-        )}
-      </Panel>
+        </Panel>
+      ) : null}
 
-      {selectedPack ? (
-        <Panel title="Surface Pack" eyebrow={selectedPack.label}>
-          <div className="pack-editor">
-            <p>{selectedPack.description}</p>
-            <div className="chip-row">
-              {REVIEW_STATUSES.map((status) => (
-                <Chip active={selectedPack.status === status} key={status} tone={statusTone(status)}>
-                  {status}
-                </Chip>
-              ))}
-            </div>
-            <Disclosure title={`${selectedPack.surfaces.length} surfaces`}>
-              <div className="chip-row">
-                {selectedPack.surfaces.map((surface) => (
-                  <Chip key={surface}>{surface}</Chip>
-                ))}
-              </div>
-            </Disclosure>
+      {creation && selectedSection && sectionSkeleton ? (
+        <Panel title="This part" eyebrow={`${sectionSkeleton.label} — ${creationSaveLabel}`}>
+          <div className="section-editor" data-section-editor>
+            <p className="panel-hint">{sectionSkeleton.description}</p>
+            {Object.entries(sectionSkeleton.slots).map(([slot, kind]) => (
+              <SlotEditor
+                key={slot}
+                kind={kind}
+                slot={slot}
+                value={selectedSection.content[slot]}
+                onChange={(value) => onUpdateSectionContent(selectedSection.id, slot, value)}
+              />
+            ))}
+            {(["align", "tone", "density"] as const).map((key) => (
+              <ChoiceChips
+                key={key}
+                label={OVERRIDE_LABELS[key]}
+                optionLabels={OVERRIDE_OPTION_LABELS[key]}
+                options={overrideChoices[key] ?? []}
+                value={String(selectedSection.overrides[key] ?? "")}
+                onChange={(value) => onUpdateSectionOverride(selectedSection.id, key, value)}
+              />
+            ))}
+            {brand ? (
+              <SwatchSelect
+                colors={brand.tokens.colors}
+                label="Highlight color"
+                roles={semanticRoles(brand)}
+                value={String(selectedSection.overrides.accent_role ?? "accent")}
+                onChange={(role) => onUpdateSectionOverride(selectedSection.id, "accent_role", role)}
+              />
+            ) : null}
           </div>
         </Panel>
       ) : null}
@@ -162,9 +158,7 @@ export function EditorDock({
       {brand && selectedComponent?.spec ? (
         <Panel title="Design" eyebrow={specSaveLabel(specSaveState, selectedComponent.name)}>
           <div className="design-controls" data-design-controls>
-            <p className="panel-hint">
-              Changes show in the example right away and save on their own.
-            </p>
+            <p className="panel-hint">Changes show in the example right away and save on their own.</p>
             {Object.entries(selectedComponent.spec.props)
               .filter(([, value]) => typeof value === "number")
               .map(([key, value]) => (
@@ -309,7 +303,13 @@ export function EditorDock({
         title="Session"
         eyebrow="Undo and advanced"
         actions={
-          <button className="ghost-action" type="button" onClick={onUndo} disabled={busy === "undo"}>
+          <button
+            aria-label="Undo brand change"
+            className="ghost-action"
+            type="button"
+            onClick={onUndo}
+            disabled={busy === "undo"}
+          >
             <RotateCcw size={15} />
             Undo
           </button>
@@ -329,6 +329,123 @@ export function EditorDock({
   );
 }
 
+function SlotEditor({
+  slot,
+  kind,
+  value,
+  onChange,
+}: {
+  slot: string;
+  kind: string;
+  value: unknown;
+  onChange: (value: unknown) => void;
+}) {
+  const label = slotLabel(slot);
+  if (kind === "text") {
+    return <TextField label={label} value={typeof value === "string" ? value : ""} onChange={onChange} />;
+  }
+  if (kind === "long") {
+    return <TextField label={label} multiline value={typeof value === "string" ? value : ""} onChange={onChange} />;
+  }
+  if (kind === "bullets" || kind === "links" || kind === "columns") {
+    const lines = Array.isArray(value) ? (value as string[]).join("\n") : "";
+    return (
+      <TextField
+        label={`${label} — one per line`}
+        multiline
+        value={lines}
+        onChange={(next) => onChange(String(next).split("\n"))}
+      />
+    );
+  }
+  if (kind === "rows") {
+    const lines = Array.isArray(value)
+      ? (value as string[][]).map((row) => (Array.isArray(row) ? row.join(" | ") : String(row))).join("\n")
+      : "";
+    return (
+      <TextField
+        label={`${label} — one row per line, cells split by |`}
+        multiline
+        value={lines}
+        onChange={(next) =>
+          onChange(
+            String(next)
+              .split("\n")
+              .map((line) => line.split("|").map((cell) => cell.trim())),
+          )
+        }
+      />
+    );
+  }
+  if (kind === "kpis") {
+    const items = Array.isArray(value) ? (value as { label?: string; value?: string }[]) : [];
+    return (
+      <div className="kpi-editor">
+        <span className="stepper-label">{label}</span>
+        {items.map((item, index) => (
+          <div className="kpi-editor-row" key={index}>
+            <TextField
+              label={`Number ${index + 1}`}
+              value={String(item.value ?? "")}
+              onChange={(next) => {
+                const updated = items.map((entry, i) => (i === index ? { ...entry, value: next } : entry));
+                onChange(updated);
+              }}
+            />
+            <TextField
+              label="Label"
+              value={String(item.label ?? "")}
+              onChange={(next) => {
+                const updated = items.map((entry, i) => (i === index ? { ...entry, label: next } : entry));
+                onChange(updated);
+              }}
+            />
+            <button
+              aria-label={`Remove number ${index + 1}`}
+              className="icon-action"
+              type="button"
+              onClick={() => onChange(items.filter((_, i) => i !== index))}
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
+        ))}
+        {items.length < 6 ? (
+          <button
+            className="ghost-action"
+            type="button"
+            onClick={() => onChange([...items, { label: "", value: "" }])}
+          >
+            Add a number
+          </button>
+        ) : null}
+      </div>
+    );
+  }
+  return null;
+}
+
+function slotLabel(slot: string): string {
+  const labels: Record<string, string> = {
+    title: "Title",
+    subtitle: "Supporting line",
+    kicker: "Small line above",
+    body: "Text",
+    bullets: "Points",
+    kpis: "Numbers",
+    quote: "Quote",
+    attribution: "Who said it",
+    cta_label: "Button words",
+    links: "Links",
+    items: "Items",
+    fineprint: "Fine print",
+    dateline: "Date line",
+    columns: "Column headers",
+    rows: "Rows",
+  };
+  return labels[slot] ?? slot.replaceAll("_", " ");
+}
+
 function pluralize(count: number, singular: string, plural?: string): string {
   return `${count} ${count === 1 ? singular : (plural ?? `${singular}s`)}`;
 }
@@ -338,98 +455,6 @@ function specSaveLabel(state: SpecSaveState, componentName: string): string {
   if (state === "saved") return `${componentName} — saved`;
   if (state === "error") return `${componentName} — couldn't save`;
   return componentName;
-}
-
-function SpecStepper({
-  label,
-  value,
-  options,
-  unit,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  options: number[];
-  unit: string;
-  onChange: (value: number) => void;
-}) {
-  const step = (direction: 1 | -1) => {
-    const sorted = [...options].sort((a, b) => a - b);
-    if (direction > 0) {
-      const next = sorted.find((option) => option > value);
-      if (next !== undefined) onChange(next);
-      return;
-    }
-    const lower = sorted.filter((option) => option < value);
-    if (lower.length) onChange(lower[lower.length - 1]);
-  };
-  const sorted = [...options].sort((a, b) => a - b);
-  const atMin = value <= sorted[0];
-  const atMax = value >= sorted[sorted.length - 1];
-  return (
-    <div className="spec-stepper">
-      <span className="stepper-label">{label}</span>
-      <div className="stepper-controls">
-        <button
-          aria-label={`Make ${label.toLowerCase()} smaller`}
-          className="stepper-button"
-          disabled={atMin}
-          type="button"
-          onClick={() => step(-1)}
-        >
-          <Minus size={14} />
-        </button>
-        <output className="stepper-value">
-          {value}
-          {unit}
-        </output>
-        <button
-          aria-label={`Make ${label.toLowerCase()} bigger`}
-          className="stepper-button"
-          disabled={atMax}
-          type="button"
-          onClick={() => step(1)}
-        >
-          <Plus size={14} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function SwatchSelect({
-  label,
-  value,
-  roles,
-  colors,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  roles: string[];
-  colors: Record<string, string>;
-  onChange: (role: string) => void;
-}) {
-  return (
-    <div className="swatch-select">
-      <span className="stepper-label">{label}</span>
-      <div aria-label={label} className="swatch-row" role="group">
-      {roles.map((role) => (
-          <button
-            aria-label={`${label}: use the ${role} color`}
-            aria-pressed={role === value}
-            className={`swatch-button${role === value ? " is-selected" : ""}`}
-            key={role}
-            style={{ background: colors[role] }}
-            title={role}
-            type="button"
-            onClick={() => onChange(role)}
-          />
-        ))}
-      </div>
-      <span className="swatch-current">{value}</span>
-    </div>
-  );
 }
 
 function ChipEditor({

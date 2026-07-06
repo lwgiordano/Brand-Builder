@@ -4,16 +4,24 @@ import {
   applyDrafts,
   completeInventory,
   createBrand,
+  createCreation,
   deleteBrand,
+  deleteCreation,
   deleteSource,
+  exportCreation,
   extractFromSource,
   generate,
   getBrand,
+  getCreation,
   getStatus,
+  getTemplates,
   listBrands,
+  listCreations,
+  saveCreation,
   saveRaw,
   setRuleStatus,
   undo,
+  undoCreation,
   uploadAssets,
   uploadFiles,
 } from "../api";
@@ -24,14 +32,16 @@ import type {
   BrandMetadata,
   BrandPayload,
   CompletionSummary,
+  Creation,
+  CreationMeta,
   DesignComponent,
   ProviderStatus,
   Rule,
   SpecPropValue,
+  TemplateLibrary,
 } from "../types";
 import { EditorDock } from "./EditorDock";
-import { InputLibrary } from "./InputLibrary";
-import { ComponentListField, type StageId } from "./model";
+import { ComponentListField, type StepId } from "./model";
 import { SystemCanvas } from "./SystemCanvas";
 
 type Toast = {
@@ -43,17 +53,15 @@ type Toast = {
 };
 
 const SUCCESS_TOAST_MS = 6000;
-const SPEC_SAVE_DEBOUNCE_MS = 700;
+const SAVE_DEBOUNCE_MS = 700;
 
 export type SpecSaveState = "idle" | "pending" | "saving" | "saved" | "error";
 
 export function WorkbenchApp() {
   const [brands, setBrands] = useState<BrandMetadata[]>([]);
   const [payload, setPayload] = useState<BrandPayload | null>(null);
-  const [activeSlug, setActiveSlug] = useState("seed");
-  const [activeStage, setActiveStage] = useState<StageId>("overview");
+  const [activeStep, setActiveStep] = useState<StepId>("brand");
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
-  const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
   const [providers, setProviders] = useState<ProviderStatus[]>([]);
@@ -64,12 +72,23 @@ export function WorkbenchApp() {
   const [dockOpen, setDockOpen] = useState(false);
   const [deleteCandidate, setDeleteCandidate] = useState<BrandMetadata | null>(null);
   const [specSaveState, setSpecSaveState] = useState<SpecSaveState>("idle");
+  const [library, setLibrary] = useState<TemplateLibrary | null>(null);
+  const [creations, setCreations] = useState<CreationMeta[]>([]);
+  const [activeCreation, setActiveCreation] = useState<Creation | null>(null);
+  const [creationArtifactUrl, setCreationArtifactUrl] = useState<string | null>(null);
+  const [previewNonce, setPreviewNonce] = useState(0);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [creationSaveState, setCreationSaveState] = useState<SpecSaveState>("idle");
   const toastId = useRef(0);
   const toastTimers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
   const payloadRef = useRef<BrandPayload | null>(null);
   const specSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const specEditSeq = useRef(0);
+  const creationRef = useRef<Creation | null>(null);
+  const creationSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const creationEditSeq = useRef(0);
   payloadRef.current = payload;
+  creationRef.current = activeCreation;
 
   const brand = payload?.brand ?? null;
   const inventory = useMemo(
@@ -78,17 +97,8 @@ export function WorkbenchApp() {
   );
   const artifacts = payload?.artifacts ?? null;
   const report = payload?.report ?? null;
-  const completeness = payload?.completeness ?? [];
   const sources = brand?.sources ?? [];
 
-  const selectedSource = useMemo(
-    () => sources.find((source) => source.id === selectedSourceId) ?? sources[0] ?? null,
-    [selectedSourceId, sources],
-  );
-  const selectedPack = useMemo(
-    () => inventory?.surface_packs.find((pack) => pack.id === selectedPackId) ?? inventory?.surface_packs[0] ?? null,
-    [inventory, selectedPackId],
-  );
   const selectedComponent = useMemo(
     () => inventory?.components.find((component) => component.id === selectedComponentId) ?? inventory?.components[0] ?? null,
     [inventory, selectedComponentId],
@@ -97,6 +107,16 @@ export function WorkbenchApp() {
     () => brand?.rules.find((rule) => rule.id === selectedRuleId) ?? null,
     [brand, selectedRuleId],
   );
+  const selectedSection = useMemo(
+    () => activeCreation?.sections.find((section) => section.id === selectedSectionId) ?? null,
+    [activeCreation, selectedSectionId],
+  );
+  const sectionSkeleton = useMemo(() => {
+    if (!activeCreation || !selectedSection || !library) return null;
+    return (
+      library.skeletons[activeCreation.type]?.find((skeleton) => skeleton.id === selectedSection.skeleton) ?? null
+    );
+  }, [activeCreation, selectedSection, library]);
 
   const dismissToast = useCallback((id: number) => {
     const timer = toastTimers.current.get(id);
@@ -141,14 +161,17 @@ export function WorkbenchApp() {
   );
 
   const loadBrandPayload = useCallback(async (slug: string) => {
-    const nextPayload = await getBrand(slug);
+    const [nextPayload, creationList] = await Promise.all([getBrand(slug), listCreations(slug)]);
     setPayload(nextPayload);
-    setActiveSlug(slug);
     setSelectedSourceId(nextPayload.brand.sources[0]?.id ?? null);
     const nextInventory = getDesignInventory(nextPayload.brand, nextPayload.completeness);
-    setSelectedPackId(nextInventory.surface_packs[0]?.id ?? null);
     setSelectedComponentId(nextInventory.components[0]?.id ?? null);
     setSelectedRuleId(null);
+    setCreations(creationList.creations);
+    setActiveCreation(null);
+    setCreationArtifactUrl(null);
+    setSelectedSectionId(null);
+    setCreationSaveState("idle");
   }, []);
 
   useEffect(() => {
@@ -157,7 +180,7 @@ export function WorkbenchApp() {
     async function boot() {
       setBusy("boot");
       try {
-        const [status, brandList] = await Promise.all([getStatus(), listBrands()]);
+        const [status, brandList, templates] = await Promise.all([getStatus(), listBrands(), getTemplates()]);
         if (cancelled) {
           return;
         }
@@ -168,6 +191,7 @@ export function WorkbenchApp() {
           const firstUsable = status.providers.find((item) => item.available && item.authenticated);
           return firstUsable?.id ?? status.default_provider ?? status.providers[0]?.id ?? "codex";
         });
+        setLibrary(templates);
         setBrands(brandList.brands);
         const initialSlug = brandList.brands[0]?.slug ?? "seed";
         await loadBrandPayload(initialSlug);
@@ -204,6 +228,7 @@ export function WorkbenchApp() {
   useEffect(
     () => () => {
       if (specSaveTimer.current) clearTimeout(specSaveTimer.current);
+      if (creationSaveTimer.current) clearTimeout(creationSaveTimer.current);
     },
     [],
   );
@@ -237,6 +262,7 @@ export function WorkbenchApp() {
   function selectBrand(slug: string) {
     void runBusy(`brand:${slug}`, async () => {
       await flushPendingSpecSave();
+      await flushPendingCreationSave();
       await loadBrandPayload(slug);
     });
   }
@@ -250,7 +276,7 @@ export function WorkbenchApp() {
         await loadBrandPayload(slug);
         return true;
       },
-      "Brand created",
+      "Brand created — every standard rule and component is already in place",
     );
   }
 
@@ -284,7 +310,7 @@ export function WorkbenchApp() {
         await uploadFiles(brand.metadata.slug, files);
         await loadBrandPayload(brand.metadata.slug);
       },
-      files.length === 1 ? "1 spec added to the source stack" : `${files.length} specs added to the source stack`,
+      files.length === 1 ? "Added — check what we understood below" : `${files.length} sources added`,
     );
   }
 
@@ -296,7 +322,7 @@ export function WorkbenchApp() {
         await uploadAssets(brand.metadata.slug, files, role);
         await loadBrandPayload(brand.metadata.slug);
       },
-      role === "logo" ? "Logo asset loaded" : "Image assets loaded",
+      role === "logo" ? "Logo loaded" : "Pictures added — we read the colors out of them",
     );
   }
 
@@ -309,7 +335,7 @@ export function WorkbenchApp() {
         await loadBrandPayload(brand.metadata.slug);
         return true;
       },
-      "URL source added",
+      "Link added",
     );
   }
 
@@ -337,7 +363,7 @@ export function WorkbenchApp() {
         const result = await extractFromSource(brand.metadata.slug, sourceId, provider);
         setProposal(result.proposal);
       },
-      "Proposal ready for review",
+      "Proposal ready — approve it to make it part of your brand",
     );
   }
 
@@ -350,7 +376,7 @@ export function WorkbenchApp() {
         setPayload(nextPayload);
         setProposal(null);
       },
-      "Proposal approved",
+      "Approved — your brand just learned something new",
     );
   }
 
@@ -361,8 +387,9 @@ export function WorkbenchApp() {
       async () => {
         const result = await generate(brand.metadata.slug);
         setPayload({ ...payload, ...result });
+        setPreviewNonce((nonce) => nonce + 1);
       },
-      "Artifacts regenerated",
+      "Everything regenerated",
     );
   }
 
@@ -391,9 +418,18 @@ export function WorkbenchApp() {
     );
   }
 
+  function handleCompleteSystem() {
+    if (!brand) return;
+    void runBusy("complete-system", async () => {
+      const result = await completeInventory(brand.metadata.slug);
+      setPayload(result);
+      pushToast({ kind: "success", text: completionMessage(result.completion) });
+    });
+  }
+
   function handleUpdateComponent(componentId: string, patch: Partial<DesignComponent>) {
     saveInventoryEdit((draftBrand) => {
-      const nextInventory = getDesignInventory(draftBrand, completeness);
+      const nextInventory = getDesignInventory(draftBrand, payload?.completeness ?? []);
       nextInventory.components = nextInventory.components.map((component) =>
         component.id === componentId ? { ...component, ...patch } : component,
       );
@@ -412,7 +448,7 @@ export function WorkbenchApp() {
       }
     }
     saveInventoryEdit((draftBrand) => {
-      const nextInventory = getDesignInventory(draftBrand, completeness);
+      const nextInventory = getDesignInventory(draftBrand, payload?.completeness ?? []);
       nextInventory.components = nextInventory.components.map((component) => {
         if (component.id !== componentId) {
           return component;
@@ -438,18 +474,18 @@ export function WorkbenchApp() {
     );
   }
 
-  function handleCompleteSystem() {
-    if (!brand) return;
-    void runBusy("complete-system", async () => {
-      const result = await completeInventory(brand.metadata.slug);
-      setPayload(result);
-      pushToast({ kind: "success", text: completionMessage(result.completion) });
-    });
+  // ——— Debounced whole-brand saves (component specs AND style tokens) ———
+  // Optimistic: the UI repaints immediately, the save happens quietly, and a
+  // sequence counter drops stale responses so fast edits never get clobbered.
+
+  function scheduleBrandSave() {
+    if (specSaveTimer.current) clearTimeout(specSaveTimer.current);
+    specSaveTimer.current = setTimeout(() => {
+      specSaveTimer.current = null;
+      void flushSpecSave();
+    }, SAVE_DEBOUNCE_MS);
   }
 
-  // Spec edits are optimistic: the preview repaints immediately, and the save
-  // is debounced. A sequence counter guards against a slow response clobbering
-  // newer local edits.
   function handleUpdateComponentSpec(componentId: string, prop: string, value: SpecPropValue) {
     specEditSeq.current += 1;
     setSpecSaveState("pending");
@@ -469,11 +505,25 @@ export function WorkbenchApp() {
       );
       return { ...current, brand: cloneBrandWithInventory(current.brand, nextInventory) };
     });
-    if (specSaveTimer.current) clearTimeout(specSaveTimer.current);
-    specSaveTimer.current = setTimeout(() => {
-      specSaveTimer.current = null;
-      void flushSpecSave();
-    }, SPEC_SAVE_DEBOUNCE_MS);
+    scheduleBrandSave();
+  }
+
+  function handleUpdateToken(path: string[], value: unknown) {
+    specEditSeq.current += 1;
+    setSpecSaveState("pending");
+    setPayload((current) => {
+      if (!current) return current;
+      const nextBrand = structuredClone(current.brand);
+      let cursor: Record<string, unknown> = nextBrand.tokens as unknown as Record<string, unknown>;
+      for (const part of path.slice(0, -1)) {
+        const next = cursor[part];
+        if (!next || typeof next !== "object") return current;
+        cursor = next as Record<string, unknown>;
+      }
+      cursor[path[path.length - 1]] = value;
+      return { ...current, brand: nextBrand };
+    });
+    scheduleBrandSave();
   }
 
   async function flushSpecSave(): Promise<void> {
@@ -486,12 +536,9 @@ export function WorkbenchApp() {
       if (specEditSeq.current === seq) {
         setPayload(next);
         setSpecSaveState("saved");
+        setPreviewNonce((nonce) => nonce + 1);
       } else if (!specSaveTimer.current) {
-        // Newer edits arrived while saving; save again shortly.
-        specSaveTimer.current = setTimeout(() => {
-          specSaveTimer.current = null;
-          void flushSpecSave();
-        }, SPEC_SAVE_DEBOUNCE_MS);
+        scheduleBrandSave();
       }
     } catch (err) {
       setSpecSaveState("error");
@@ -507,55 +554,335 @@ export function WorkbenchApp() {
     }
   }
 
+  // ——— Creations: same optimistic + debounced pattern, separate pipeline ———
+
+  function editCreation(mutator: (draft: Creation) => Creation) {
+    creationEditSeq.current += 1;
+    setCreationSaveState("pending");
+    setActiveCreation((current) => (current ? mutator(structuredClone(current)) : current));
+    if (creationSaveTimer.current) clearTimeout(creationSaveTimer.current);
+    creationSaveTimer.current = setTimeout(() => {
+      creationSaveTimer.current = null;
+      void flushCreationSave();
+    }, SAVE_DEBOUNCE_MS);
+  }
+
+  async function flushCreationSave(): Promise<void> {
+    const current = creationRef.current;
+    const slug = payloadRef.current?.brand.metadata.slug;
+    if (!current || !slug) return;
+    const seq = creationEditSeq.current;
+    setCreationSaveState("saving");
+    try {
+      const result = await saveCreation(slug, current);
+      if (creationEditSeq.current === seq) {
+        setActiveCreation(result.creation);
+        setCreationArtifactUrl(result.artifact_url);
+        setPreviewNonce((nonce) => nonce + 1);
+        setCreationSaveState("saved");
+        setCreations((list) =>
+          list.map((meta) =>
+            meta.id === result.creation.id
+              ? {
+                  ...meta,
+                  name: result.creation.name,
+                  version: result.creation.version,
+                  updated_at: result.creation.updated_at,
+                  section_count: result.creation.sections.length,
+                }
+              : meta,
+          ),
+        );
+      } else if (!creationSaveTimer.current) {
+        creationSaveTimer.current = setTimeout(() => {
+          creationSaveTimer.current = null;
+          void flushCreationSave();
+        }, SAVE_DEBOUNCE_MS);
+      }
+    } catch (err) {
+      setCreationSaveState("error");
+      pushToast({ kind: "failure", text: errorMessage(err) });
+    }
+  }
+
+  async function flushPendingCreationSave(): Promise<void> {
+    if (creationSaveTimer.current) {
+      clearTimeout(creationSaveTimer.current);
+      creationSaveTimer.current = null;
+      await flushCreationSave();
+    }
+  }
+
+  function handleNewCreation(name: string, templateId: string, pasteText: string) {
+    if (!brand) return Promise.resolve(undefined);
+    return runBusy(
+      "new-creation",
+      async () => {
+        const result = await createCreation(brand.metadata.slug, name, templateId, pasteText);
+        setActiveCreation(result.creation);
+        setCreationArtifactUrl(result.artifact_url);
+        setPreviewNonce((nonce) => nonce + 1);
+        setSelectedSectionId(result.creation.sections[0]?.id ?? null);
+        setCreationSaveState("idle");
+        setCreations((list) => [
+          {
+            id: result.creation.id,
+            name: result.creation.name,
+            type: result.creation.type,
+            template_id: result.creation.template_id,
+            version: result.creation.version,
+            updated_at: result.creation.updated_at,
+            section_count: result.creation.sections.length,
+          },
+          ...list,
+        ]);
+        return true;
+      },
+      "Made it — edit any part on the right",
+    );
+  }
+
+  function handleOpenCreation(creationId: string) {
+    if (!brand) return;
+    void runBusy(`open-creation:${creationId}`, async () => {
+      const result = await getCreation(brand.metadata.slug, creationId);
+      setActiveCreation(result.creation);
+      setCreationArtifactUrl(result.artifact_url);
+      setPreviewNonce((nonce) => nonce + 1);
+      setSelectedSectionId(result.creation.sections[0]?.id ?? null);
+      setCreationSaveState("idle");
+    });
+  }
+
+  function handleCloseCreation() {
+    void (async () => {
+      await flushPendingCreationSave();
+      setActiveCreation(null);
+      setCreationArtifactUrl(null);
+      setSelectedSectionId(null);
+      setCreationSaveState("idle");
+    })();
+  }
+
+  function handleDeleteCreation(creationId: string) {
+    if (!brand) return;
+    const meta = creations.find((item) => item.id === creationId);
+    void runBusy(
+      `delete-creation:${creationId}`,
+      async () => {
+        const result = await deleteCreation(brand.metadata.slug, creationId);
+        setCreations(result.creations);
+        if (activeCreation?.id === creationId) {
+          setActiveCreation(null);
+          setCreationArtifactUrl(null);
+          setSelectedSectionId(null);
+        }
+      },
+      meta ? `Deleted "${meta.name}"` : "Design deleted",
+    );
+  }
+
+  function handleUndoCreation() {
+    if (!brand || !activeCreation) return;
+    void runBusy(
+      "creation-undo",
+      async () => {
+        await flushPendingCreationSave();
+        const result = await undoCreation(brand.metadata.slug, activeCreation.id);
+        creationEditSeq.current += 1;
+        setActiveCreation(result.creation);
+        setCreationArtifactUrl(result.artifact_url);
+        setPreviewNonce((nonce) => nonce + 1);
+        setCreationSaveState("idle");
+      },
+      "Went back one step",
+    );
+  }
+
+  function handleExportPptx() {
+    if (!brand || !activeCreation) return;
+    void runBusy(
+      "export-pptx",
+      async () => {
+        await flushPendingCreationSave();
+        const result = await exportCreation(brand.metadata.slug, activeCreation.id);
+        window.open(result.url, "_blank", "noreferrer");
+      },
+      "PowerPoint ready — it's downloading now",
+    );
+  }
+
+  function handleAddSection(skeletonId: string) {
+    if (!activeCreation || !library) return;
+    const skeleton = library.skeletons[activeCreation.type]?.find((item) => item.id === skeletonId);
+    if (!skeleton) return;
+    const sectionId = `s-${randomSuffix(6)}`;
+    editCreation((draft) => ({
+      ...draft,
+      sections: [
+        ...draft.sections,
+        {
+          id: sectionId,
+          skeleton: skeletonId,
+          content: structuredClone(skeleton.defaults) as Record<string, unknown>,
+          overrides: { ...skeleton.overrides },
+        },
+      ],
+    }));
+    setSelectedSectionId(sectionId);
+  }
+
+  function handleRemoveSection(sectionId: string) {
+    if (!activeCreation || activeCreation.sections.length <= 1) return;
+    editCreation((draft) => ({
+      ...draft,
+      sections: draft.sections.filter((section) => section.id !== sectionId),
+    }));
+    if (selectedSectionId === sectionId) {
+      setSelectedSectionId(null);
+    }
+  }
+
+  function handleMoveSection(sectionId: string, direction: -1 | 1) {
+    editCreation((draft) => {
+      const index = draft.sections.findIndex((section) => section.id === sectionId);
+      const target = index + direction;
+      if (index === -1 || target < 0 || target >= draft.sections.length) return draft;
+      const sections = [...draft.sections];
+      const [moved] = sections.splice(index, 1);
+      sections.splice(target, 0, moved);
+      return { ...draft, sections };
+    });
+  }
+
+  function handleUpdateSectionContent(sectionId: string, slot: string, value: unknown) {
+    editCreation((draft) => ({
+      ...draft,
+      sections: draft.sections.map((section) =>
+        section.id === sectionId ? { ...section, content: { ...section.content, [slot]: value } } : section,
+      ),
+    }));
+  }
+
+  function handleUpdateSectionOverride(sectionId: string, key: string, value: string) {
+    editCreation((draft) => ({
+      ...draft,
+      sections: draft.sections.map((section) =>
+        section.id === sectionId ? { ...section, overrides: { ...section.overrides, [key]: value } } : section,
+      ),
+    }));
+  }
+
+  function handleRenameCreation(name: string) {
+    editCreation((draft) => ({ ...draft, name }));
+  }
+
+  const saveStateLabel = saveLabel(specSaveState);
+  const creationSaveLabel = saveLabel(creationSaveState);
+
   return (
     <div className="lab-shell" data-creative-brand-lab>
       <a className="skip-link" href="#canvas">
         Skip to canvas
       </a>
-      <InputLibrary
-        brands={brands}
-        brand={brand}
-        busy={busy}
-        selectedSourceId={selectedSource?.id ?? null}
-        onAddUrl={handleAddUrl}
-        onAnalyzeSource={handleAnalyzeSource}
-        onCreateBrand={handleCreateBrand}
-        onDeleteBrand={handleRequestDeleteBrand}
-        onDeleteSource={handleDeleteSource}
-        onSelectBrand={selectBrand}
-        onSelectSource={setSelectedSourceId}
-        onUploadAssets={handleUploadAssets}
-        onUploadFiles={handleUploadFiles}
-      />
       <SystemCanvas
-        activeStage={activeStage}
-        artifacts={artifacts}
+        activeStep={activeStep}
         brand={brand}
         busy={busy}
-        completeness={completeness}
+        checksFailing={report?.summary.failed ?? 0}
         dockOpen={dockOpen}
-        inventory={inventory}
-        report={report}
-        selectedComponentId={selectedComponent?.id ?? null}
-        selectedPackId={selectedPack?.id ?? null}
-        selectedRuleId={selectedRule?.id ?? null}
+        intake={{
+          brands,
+          brand,
+          selectedSourceId: selectedSourceId,
+          busy,
+          providers,
+          provider,
+          proposal,
+          onSelectBrand: selectBrand,
+          onCreateBrand: handleCreateBrand,
+          onDeleteBrand: handleRequestDeleteBrand,
+          onSelectSource: setSelectedSourceId,
+          onUploadFiles: handleUploadFiles,
+          onUploadAssets: handleUploadAssets,
+          onAddUrl: handleAddUrl,
+          onDeleteSource: handleDeleteSource,
+          onAnalyzeSource: handleAnalyzeSource,
+          onProviderChange: setProvider,
+          onApplyProposal: handleApplyProposal,
+          onRejectProposal: () => {
+            setProposal(null);
+            pushToast({ kind: "success", text: "Proposal rejected — nothing changed" });
+          },
+        }}
+        lab={
+          brand && inventory
+            ? {
+                brand,
+                components: inventory.components,
+                rules: brand.rules,
+                selectedComponentId: selectedComponent?.id ?? null,
+                busy,
+                onOpenDock: () => setDockOpen(true),
+                onSelectComponent: setSelectedComponentId,
+                onSelectRule: (ruleId) => {
+                  setSelectedRuleId(ruleId);
+                  setDockOpen(true);
+                },
+                onCompleteSystem: handleCompleteSystem,
+              }
+            : null
+        }
+        ready={Boolean(payload && inventory && artifacts && report)}
+        studio={
+          brand && artifacts
+            ? {
+                brand,
+                library,
+                creations,
+                activeCreation,
+                artifactUrl: creationArtifactUrl,
+                previewNonce,
+                selectedSectionId,
+                busy,
+                saveStateLabel: creationSaveLabel,
+                artifacts,
+                onNewCreation: handleNewCreation,
+                onOpenCreation: handleOpenCreation,
+                onCloseCreation: handleCloseCreation,
+                onDeleteCreation: handleDeleteCreation,
+                onRenameCreation: handleRenameCreation,
+                onSelectSection: setSelectedSectionId,
+                onAddSection: handleAddSection,
+                onRemoveSection: handleRemoveSection,
+                onMoveSection: handleMoveSection,
+                onUndoCreation: handleUndoCreation,
+                onExportPptx: handleExportPptx,
+                onOpenDock: () => setDockOpen(true),
+              }
+            : null
+        }
+        styleSettings={
+          brand && report
+            ? {
+                brand,
+                report,
+                saveStateLabel,
+                onUpdateToken: handleUpdateToken,
+                onSetRuleStatus: handleSetRuleStatus,
+                onSelectRule: (ruleId) => {
+                  setSelectedRuleId(ruleId);
+                  setDockOpen(true);
+                },
+              }
+            : null
+        }
         onGenerate={handleGenerate}
-        onSelectComponent={(componentId) => {
-          setSelectedComponentId(componentId);
-          setActiveStage("component-lab");
-        }}
-        onSelectPack={(packId) => {
-          setSelectedPackId(packId);
-          setActiveStage("surface-packs");
-        }}
-        onCompleteSystem={handleCompleteSystem}
-        onSelectRule={(ruleId) => setSelectedRuleId(ruleId)}
-        onSetRuleStatus={handleSetRuleStatus}
-        onStageChange={setActiveStage}
+        onStepChange={(step) => setActiveStep(step)}
         onToggleDock={() => setDockOpen((open) => !open)}
       />
       <button
-        aria-label="Close review dock"
+        aria-label="Close inspector dock"
         className={`dock-backdrop${dockOpen ? " is-open" : ""}`}
         tabIndex={dockOpen ? 0 : -1}
         type="button"
@@ -564,29 +891,26 @@ export function WorkbenchApp() {
       <EditorDock
         brand={brand}
         busy={busy}
+        creation={activeStep === "make" ? activeCreation : null}
+        creationSaveLabel={creationSaveLabel}
         inventory={inventory}
         open={dockOpen}
-        proposal={proposal}
-        provider={provider}
-        providers={providers}
-        selectedComponent={selectedComponent}
-        selectedPack={selectedPack}
+        overrideChoices={library?.override_choices ?? {}}
+        report={report}
+        sectionSkeleton={activeStep === "make" ? sectionSkeleton : null}
+        selectedComponent={activeStep === "components" ? selectedComponent : null}
         selectedRule={selectedRule}
-        selectedSource={selectedSource}
+        selectedSection={activeStep === "make" ? selectedSection : null}
         sources={sources}
-        onAnalyzeSource={handleAnalyzeSource}
-        onApplyProposal={handleApplyProposal}
-        onProviderChange={setProvider}
-        onRejectProposal={() => {
-          setProposal(null);
-          pushToast({ kind: "success", text: "Proposal rejected — nothing changed" });
-        }}
         specSaveState={specSaveState}
+        onSelectRule={setSelectedRuleId}
         onSetRuleStatus={handleSetRuleStatus}
         onToggleComponentValue={handleToggleComponentValue}
         onUndo={handleUndo}
         onUpdateComponent={handleUpdateComponent}
         onUpdateComponentSpec={handleUpdateComponentSpec}
+        onUpdateSectionContent={handleUpdateSectionContent}
+        onUpdateSectionOverride={handleUpdateSectionOverride}
       />
 
       <div className="toast-layer">
@@ -696,6 +1020,13 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function saveLabel(state: SpecSaveState): string {
+  if (state === "pending" || state === "saving") return "Saving…";
+  if (state === "saved") return "All changes saved";
+  if (state === "error") return "Couldn't save — try again";
+  return "Edits save on their own";
+}
+
 function completionMessage(completion: CompletionSummary): string {
   const parts: string[] = [];
   if (completion.components_added) {
@@ -708,4 +1039,13 @@ function completionMessage(completion: CompletionSummary): string {
     return "Your system is already complete — nothing was missing.";
   }
   return `Added ${parts.join(" and ")}. Everything a full design system needs is now in place.`;
+}
+
+function randomSuffix(length: number): string {
+  const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let out = "";
+  for (let index = 0; index < length; index += 1) {
+    out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return out;
 }

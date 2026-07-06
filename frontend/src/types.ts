@@ -218,6 +218,65 @@ export type BrandPayload = {
   report: ValidationReport;
 };
 
+export type CreationType = "deck" | "report" | "landing";
+
+export type CreationSection = {
+  id: string;
+  skeleton: string;
+  content: Record<string, unknown>;
+  overrides: Record<string, string | number | boolean>;
+};
+
+export type Creation = {
+  id: string;
+  name: string;
+  type: CreationType;
+  template_id: string;
+  version: number;
+  sections: CreationSection[];
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreationMeta = {
+  id: string;
+  name: string;
+  type: CreationType;
+  template_id: string;
+  version: number;
+  updated_at: string;
+  section_count: number;
+};
+
+export type SkeletonDefinition = {
+  id: string;
+  label: string;
+  description: string;
+  slots: Record<string, "text" | "long" | "bullets" | "kpis" | "links" | "columns" | "rows" | string>;
+  defaults: Record<string, unknown>;
+  overrides: Record<string, string | number | boolean>;
+};
+
+export type TemplateDefinition = {
+  id: string;
+  type: CreationType;
+  label: string;
+  description: string;
+  sections: string[];
+};
+
+export type TemplateLibrary = {
+  types: CreationType[];
+  templates: TemplateDefinition[];
+  skeletons: Record<CreationType, SkeletonDefinition[]>;
+  override_choices: Record<string, string[]>;
+};
+
+export type CreationPayload = {
+  creation: Creation;
+  artifact_url: string;
+};
+
 export type AiProposal = {
   mode?: string;
   summary: string;

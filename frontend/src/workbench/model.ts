@@ -1,60 +1,47 @@
 import {
   CheckCircle2,
-  ClipboardCheck,
   FileOutput,
   FlaskConical,
   FolderOpen,
-  Grid3X3,
-  Layers3,
   type LucideIcon,
   Palette,
 } from "lucide-react";
 
-export type StageId = "overview" | "foundations" | "surface-packs" | "component-lab" | "outputs" | "validation";
+export type StepId = "brand" | "style" | "components" | "make";
 
-export type StageDefinition = {
-  id: StageId;
+export type StepDefinition = {
+  id: StepId;
   label: string;
   description: string;
   Icon: LucideIcon;
 };
 
-export const STAGES: StageDefinition[] = [
+// The whole app is one pipeline: add what you have, set your style,
+// shape your components, then make finished things with them.
+export const STEPS: StepDefinition[] = [
   {
-    id: "overview",
-    label: "Overview",
-    description: "Coverage, rule health, source readiness, and next actions.",
-    Icon: Grid3X3,
+    id: "brand",
+    label: "Add your brand",
+    description: "Drop in anything you have — files, pictures, links, or notes. We'll read what we can.",
+    Icon: FolderOpen,
   },
   {
-    id: "foundations",
-    label: "Foundations",
-    description: "Color, type, spacing, shape, and logo controls.",
+    id: "style",
+    label: "Set your style",
+    description: "Your colors, type, and spacing — plus the rules that keep everything on brand.",
     Icon: Palette,
   },
   {
-    id: "surface-packs",
-    label: "Surface Packs",
-    description: "Slides, documents, reports, dashboards, web, and marketing coverage.",
-    Icon: Layers3,
-  },
-  {
-    id: "component-lab",
-    label: "Component Lab",
-    description: "Pick a piece of your system, see a live example, and shape it with simple controls.",
+    id: "components",
+    label: "Your components",
+    description: "Every piece of your system with a live example you can shape with simple controls.",
     Icon: FlaskConical,
   },
   {
-    id: "outputs",
-    label: "Outputs",
-    description: "Preview and export generated artifacts.",
+    id: "make",
+    label: "Make things",
+    description: "Turn your system into slide decks, reports, and landing pages — ready to share.",
     Icon: FileOutput,
-  },
-  {
-    id: "validation",
-    label: "Validation",
-    description: "Rule results, estimates, failures, and remediation targets.",
-    Icon: ClipboardCheck,
   },
 ];
 

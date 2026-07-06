@@ -1,76 +1,53 @@
-import {
-  AlertTriangle,
-  ArrowUpRight,
-  FileOutput,
-  Loader2,
-  PanelRight,
-  Play,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
-import type {
-  Artifacts,
-  Brand,
-  CompletenessLeaf,
-  DesignComponent,
-  DesignInventory,
-  DesignOutput,
-  Rule,
-  SurfacePack,
-  ValidationReport,
-} from "../types";
-import { artifactUrl, coverageForPack, rulesForComponent } from "../app/inventory";
-import { validationResultKey, validationScopeLabel } from "../app/validation";
-import { COMPONENT_CATEGORY_LABELS, COMPONENT_CATEGORY_ORDER, STAGES, type StageId } from "./model";
+import { Loader2, PanelRight, Play, ShieldCheck, Sparkles } from "lucide-react";
+import type { ComponentProps } from "react";
+import type { Brand, DesignComponent, Rule } from "../types";
+import { rulesForComponent } from "../app/inventory";
+import { BrandIntake } from "./BrandIntake";
+import { CreationStudio } from "./CreationStudio";
+import { COMPONENT_CATEGORY_LABELS, COMPONENT_CATEGORY_ORDER, STEPS, type StepId } from "./model";
 import { ComponentPreview } from "./preview";
-import { Chip, Disclosure, Meter, Panel, compactNumber, statusTone } from "./primitives";
+import { Chip, statusTone } from "./primitives";
+import { StyleSettings } from "./StyleSettings";
+
+/**
+ * The main region: one pipeline, four steps. The step rail is the app's
+ * primary navigation; each step renders its own full-width canvas.
+ */
 
 type SystemCanvasProps = {
   brand: Brand | null;
-  inventory: DesignInventory | null;
-  completeness: CompletenessLeaf[];
-  artifacts: Artifacts | null;
-  report: ValidationReport | null;
-  activeStage: StageId;
-  selectedPackId: string | null;
-  selectedComponentId: string | null;
-  selectedRuleId: string | null;
+  ready: boolean;
+  activeStep: StepId;
   busy: string | null;
   dockOpen: boolean;
-  onStageChange: (stage: StageId) => void;
-  onSelectPack: (packId: string) => void;
-  onSelectComponent: (componentId: string) => void;
-  onSelectRule: (ruleId: string) => void;
+  checksFailing: number;
+  intake: ComponentProps<typeof BrandIntake>;
+  styleSettings: ComponentProps<typeof StyleSettings> | null;
+  lab: ComponentLabStageProps | null;
+  studio: ComponentProps<typeof CreationStudio> | null;
+  onStepChange: (step: StepId) => void;
   onGenerate: () => void;
-  onSetRuleStatus: (ruleId: string, status: Rule["status"]) => void;
   onToggleDock: () => void;
-  onCompleteSystem: () => void;
 };
 
 export function SystemCanvas({
   brand,
-  inventory,
-  completeness,
-  artifacts,
-  report,
-  activeStage,
-  selectedPackId,
-  selectedComponentId,
-  selectedRuleId,
+  ready,
+  activeStep,
   busy,
   dockOpen,
-  onStageChange,
-  onSelectPack,
-  onSelectComponent,
-  onSelectRule,
+  checksFailing,
+  intake,
+  styleSettings,
+  lab,
+  studio,
+  onStepChange,
   onGenerate,
-  onSetRuleStatus,
   onToggleDock,
-  onCompleteSystem,
 }: SystemCanvasProps) {
-  if (!brand || !inventory || !artifacts || !report) {
+  if (!brand || !ready) {
     return (
-      <main className="system-canvas" aria-label="System Canvas" id="canvas" tabIndex={-1}>
+      <main className="system-canvas" aria-label="Brand pipeline" id="canvas" tabIndex={-1}>
         <div className="loading-state" role="status">
           <Loader2 className="spin" size={20} />
           Loading brand lab
@@ -79,24 +56,34 @@ export function SystemCanvas({
     );
   }
 
-  const selectedStage = STAGES.find((stage) => stage.id === activeStage) ?? STAGES[0];
+  const selectedStep = STEPS.find((step) => step.id === activeStep) ?? STEPS[0];
 
   return (
-    <main className="system-canvas" aria-label="System Canvas" id="canvas" tabIndex={-1}>
+    <main className="system-canvas" aria-label="Brand pipeline" id="canvas" tabIndex={-1}>
       <header className="canvas-topbar">
         <div>
           <p className="lab-eyebrow">Creative Brand Lab</p>
           <h1>{brand.metadata.name}</h1>
-          <span className="canvas-subtitle">Visually editable design-system inventory for generated brand surfaces.</span>
+          <span className="canvas-subtitle">From whatever you have to finished, on-brand designs.</span>
         </div>
         <div className="topbar-actions">
+          <button
+            aria-label={checksFailing ? `${checksFailing} checks failing — open the inspector` : "All checks passing — open the inspector"}
+            className={`ghost-action checks-chip${checksFailing ? " has-failures" : ""}`}
+            data-checks-chip
+            type="button"
+            onClick={onToggleDock}
+          >
+            <ShieldCheck size={15} />
+            {checksFailing ? `${checksFailing} to fix` : "All checks pass"}
+          </button>
           <button className="primary-action" type="button" onClick={onGenerate} disabled={busy === "generate"}>
             {busy === "generate" ? <Loader2 className="spin" size={16} /> : <Play size={16} />}
             Generate
           </button>
           <button
             aria-expanded={dockOpen}
-            aria-label="Toggle review dock"
+            aria-label="Toggle inspector dock"
             className="icon-action dock-toggle"
             type="button"
             onClick={onToggleDock}
@@ -106,15 +93,18 @@ export function SystemCanvas({
         </div>
       </header>
 
-      <nav className="stage-tabs" aria-label="System canvas stages">
-        {STAGES.map(({ id, label, Icon }) => (
+      <nav className="stage-tabs step-nav" aria-label="Pipeline steps" data-step-nav>
+        {STEPS.map(({ id, label, Icon }, index) => (
           <button
-            aria-current={id === activeStage ? "true" : undefined}
-            className={`stage-tab${id === activeStage ? " is-active" : ""}`}
+            aria-current={id === activeStep ? "step" : undefined}
+            className={`stage-tab${id === activeStep ? " is-active" : ""}`}
             key={id}
             type="button"
-            onClick={() => onStageChange(id)}
+            onClick={() => onStepChange(id)}
           >
+            <span className="step-number" aria-hidden="true">
+              {index + 1}
+            </span>
             <Icon size={16} />
             <span>{label}</span>
           </button>
@@ -122,243 +112,31 @@ export function SystemCanvas({
       </nav>
 
       <section className="stage-hero">
-        <selectedStage.Icon size={20} />
+        <selectedStep.Icon size={20} />
         <div>
-          <h2>{selectedStage.label}</h2>
-          <p>{selectedStage.description}</p>
+          <h2>{selectedStep.label}</h2>
+          <p>{selectedStep.description}</p>
         </div>
       </section>
 
-      {activeStage === "overview" ? (
-        <OverviewStage
-          brand={brand}
-          busy={busy}
-          completeness={completeness}
-          inventory={inventory}
-          report={report}
-          selectedPackId={selectedPackId}
-          onCompleteSystem={onCompleteSystem}
-          onSelectPack={onSelectPack}
-          onSelectRule={onSelectRule}
-        />
-      ) : null}
-      {activeStage === "foundations" ? <FoundationsStage brand={brand} /> : null}
-      {activeStage === "surface-packs" ? (
-        <SurfacePacksStage
-          completeness={completeness}
-          inventory={inventory}
-          selectedPackId={selectedPackId}
-          onSelectPack={onSelectPack}
-        />
-      ) : null}
-      {activeStage === "component-lab" ? (
-        <ComponentLabStage
-          brand={brand}
-          components={inventory.components}
-          selectedComponentId={selectedComponentId}
-          rules={brand.rules}
-          onOpenDock={onToggleDock}
-          onSelectComponent={onSelectComponent}
-          onSelectRule={onSelectRule}
-        />
-      ) : null}
-      {activeStage === "outputs" ? (
-        <OutputGalleryStage
-          artifacts={artifacts}
-          inventory={inventory}
-          report={report}
-          version={brand.metadata.version}
-        />
-      ) : null}
-      {activeStage === "validation" ? (
-        <ValidationStage
-          report={report}
-          rules={brand.rules}
-          selectedRuleId={selectedRuleId}
-          onSelectRule={onSelectRule}
-          onSetRuleStatus={onSetRuleStatus}
-        />
-      ) : null}
+      {activeStep === "brand" ? <BrandIntake {...intake} /> : null}
+      {activeStep === "style" && styleSettings ? <StyleSettings {...styleSettings} /> : null}
+      {activeStep === "components" && lab ? <ComponentLabStage {...lab} /> : null}
+      {activeStep === "make" && studio ? <CreationStudio {...studio} /> : null}
     </main>
   );
 }
 
-type OverviewStageProps = {
-  brand: Brand;
-  inventory: DesignInventory;
-  completeness: CompletenessLeaf[];
-  report: ValidationReport;
-  selectedPackId: string | null;
-  busy: string | null;
-  onCompleteSystem: () => void;
-  onSelectPack: (packId: string) => void;
-  onSelectRule: (ruleId: string) => void;
-};
-
-function OverviewStage({
-  brand,
-  inventory,
-  completeness,
-  report,
-  selectedPackId,
-  busy,
-  onCompleteSystem,
-  onSelectPack,
-  onSelectRule,
-}: OverviewStageProps) {
-  const approvedRules = brand.rules.filter((rule) => rule.status === "approved").length;
-  const draftRules = brand.rules.filter((rule) => rule.status === "draft").length;
-  const approvedComponents = inventory.components.filter((component) => component.status === "approved").length;
-  return (
-    <div className="stage-grid overview-grid" data-workbench-stage="Overview">
-      <Panel
-        title="System Snapshot"
-        eyebrow="Inventory health"
-        actions={
-          <button
-            className="ghost-action"
-            type="button"
-            onClick={onCompleteSystem}
-            disabled={busy === "complete-system"}
-          >
-            {busy === "complete-system" ? <Loader2 className="spin" size={15} /> : <Sparkles size={15} />}
-            Complete my system
-          </button>
-        }
-      >
-        <p className="panel-hint">
-          Missing a standard piece? This fills in every rule and component a full design system needs.
-        </p>
-        <div className="metric-grid">
-          <MetricCard
-            label="Surface packs"
-            value={inventory.surface_packs.length}
-            supporting={`${inventory.surface_packs.filter((pack) => pack.required).length} required`}
-          />
-          <MetricCard label="Components" value={inventory.components.length} supporting={`${approvedComponents} approved`} />
-          <MetricCard label="Rules" value={brand.rules.length} supporting={`${approvedRules} approved, ${draftRules} draft`} />
-          <MetricCard label="Validation" value={report.summary.total} supporting={`${report.summary.failed} failed`} />
-        </div>
-      </Panel>
-
-      <Panel title="Surface-Pack Coverage" eyebrow="Click a pack to review" actions={<Chip tone="good">matrix</Chip>}>
-        <SurfacePackMap
-          completeness={completeness}
-          components={inventory.components}
-          packs={inventory.surface_packs}
-          selectedPackId={selectedPackId}
-          onSelectPack={onSelectPack}
-        />
-      </Panel>
-
-      <Panel title="Rule Health Overview" eyebrow="Lanes by category">
-        <RuleHealthLanes rules={brand.rules} onSelectRule={onSelectRule} />
-      </Panel>
-
-      <Panel title="Brand Preview" eyebrow="Generated visual language">
-        <BrandPreview brand={brand} />
-      </Panel>
-    </div>
-  );
-}
-
-function FoundationsStage({ brand }: { brand: Brand }) {
-  const colorEntries = Object.entries(brand.tokens.colors);
-  const typeSizes = Object.entries(brand.tokens.typography.sizes);
-  return (
-    <div className="stage-grid foundations-grid" data-workbench-stage="Foundations">
-      <Panel title="Color Roles" eyebrow="Swatches">
-        <div className="swatch-grid">
-          {colorEntries.map(([name, value]) => (
-            <div className="swatch-card" key={name}>
-              <span className="swatch" style={{ background: value }} />
-              <strong>{name}</strong>
-              <code>{value}</code>
-            </div>
-          ))}
-        </div>
-      </Panel>
-
-      <Panel title="Type Specimens" eyebrow={brand.tokens.typography.font_family}>
-        <div className="type-specimens">
-          {[...typeSizes]
-            .sort(([, left], [, right]) => left - right)
-            .map(([name, size]) => (
-              <div className="type-row" key={name}>
-                <span>{name}</span>
-                <strong style={{ fontSize: `${size}px`, fontFamily: brand.tokens.typography.font_family }}>
-                  Brand System
-                </strong>
-                <small>{size}px</small>
-              </div>
-            ))}
-        </div>
-      </Panel>
-
-      <Panel title="Spacing Ruler" eyebrow={`${brand.tokens.spacing.grid}px grid`}>
-        <div className="ruler-stack">
-          {brand.tokens.spacing.scale.map((value) => (
-            <div className="ruler-row" key={value}>
-              <span style={{ width: `${Math.min(100, (value / Math.max(...brand.tokens.spacing.scale)) * 100)}%` }} />
-              <strong>{value}px</strong>
-            </div>
-          ))}
-        </div>
-      </Panel>
-
-      <Panel title="Logo Clear Space" eyebrow={brand.tokens.logo.placement}>
-        <div className="logo-clear-card">
-          <span>{brand.tokens.logo.wordmark}</span>
-          <small>{brand.tokens.logo.height}px nominal height</small>
-        </div>
-      </Panel>
-    </div>
-  );
-}
-
-type SurfacePacksStageProps = {
-  inventory: DesignInventory;
-  completeness: CompletenessLeaf[];
-  selectedPackId: string | null;
-  onSelectPack: (packId: string) => void;
-};
-
-function SurfacePacksStage({ inventory, completeness, selectedPackId, onSelectPack }: SurfacePacksStageProps) {
-  return (
-    <div className="stage-grid" data-workbench-stage="Surface Packs">
-      <Panel title="Rule + Coverage Matrix" eyebrow="Surface readiness">
-        <SurfacePackMap
-          completeness={completeness}
-          components={inventory.components}
-          packs={inventory.surface_packs}
-          selectedPackId={selectedPackId}
-          onSelectPack={onSelectPack}
-        />
-      </Panel>
-      <div className="surface-pack-grid">
-        {inventory.surface_packs.map((pack) => (
-          <SurfacePackCard
-            completeness={completeness}
-            components={inventory.components}
-            key={pack.id}
-            pack={pack}
-            selected={pack.id === selectedPackId}
-            onSelect={() => onSelectPack(pack.id)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-type ComponentLabStageProps = {
+export type ComponentLabStageProps = {
   brand: Brand;
   components: DesignComponent[];
   rules: Rule[];
   selectedComponentId: string | null;
+  busy: string | null;
   onOpenDock: () => void;
   onSelectComponent: (componentId: string) => void;
   onSelectRule: (ruleId: string) => void;
+  onCompleteSystem: () => void;
 };
 
 function ComponentLabStage({
@@ -366,9 +144,11 @@ function ComponentLabStage({
   components,
   rules,
   selectedComponentId,
+  busy,
   onOpenDock,
   onSelectComponent,
   onSelectRule,
+  onCompleteSystem,
 }: ComponentLabStageProps) {
   const selected =
     components.find((component) => component.id === selectedComponentId) ?? components[0] ?? null;
@@ -385,9 +165,18 @@ function ComponentLabStage({
   }
   const linkedRules = selected ? rulesForComponent(selected, rules) : [];
   return (
-    <div className="component-lab stage-grid" data-workbench-stage="Component Lab" data-compact-editor-marker>
+    <div className="component-lab stage-grid" data-workbench-stage="Your components" data-compact-editor-marker>
       <div className="lab-layout">
         <nav aria-label="Components in this system" className="component-rail">
+          <button
+            className="ghost-action complete-system"
+            type="button"
+            onClick={onCompleteSystem}
+            disabled={busy === "complete-system"}
+          >
+            {busy === "complete-system" ? <Loader2 className="spin" size={15} /> : <Sparkles size={15} />}
+            Complete my system
+          </button>
           <p className="rail-hint">Pick a piece. The example updates as you edit.</p>
           {groups.map((group) => (
             <section className="rail-group" key={group.category}>
@@ -447,316 +236,10 @@ function ComponentLabStage({
           </section>
         ) : (
           <section className="lab-canvas-region">
-            <div className="empty-hint">No components yet. Use “Complete my system” on the Overview tab.</div>
+            <div className="empty-hint">No components yet. Press “Complete my system” to fill them in.</div>
           </section>
         )}
       </div>
     </div>
-  );
-}
-
-type OutputGalleryStageProps = {
-  inventory: DesignInventory;
-  artifacts: Artifacts;
-  report: ValidationReport;
-  version: number;
-};
-
-function OutputGalleryStage({ inventory, artifacts, report, version }: OutputGalleryStageProps) {
-  return (
-    <div className="stage-grid" data-workbench-stage="Outputs">
-      <Panel title="Output Gallery" eyebrow="Previews refresh every time you save an edit">
-        <div className="output-gallery">
-          {inventory.outputs.map((output) => (
-            <OutputCard artifacts={artifacts} key={output.id} output={output} report={report} version={version} />
-          ))}
-        </div>
-      </Panel>
-    </div>
-  );
-}
-
-type ValidationStageProps = {
-  report: ValidationReport;
-  rules: Rule[];
-  selectedRuleId: string | null;
-  onSelectRule: (ruleId: string) => void;
-  onSetRuleStatus: (ruleId: string, status: Rule["status"]) => void;
-};
-
-function ValidationStage({ report, rules, selectedRuleId, onSelectRule, onSetRuleStatus }: ValidationStageProps) {
-  return (
-    <div className="stage-grid" data-workbench-stage="Validation">
-      <Panel title="Validation Summary" eyebrow="Machine checks">
-        <div className="metric-grid">
-          <MetricCard label="Passed" value={report.summary.passed} supporting="approved checks" />
-          <MetricCard label="Failed" value={report.summary.failed} supporting="needs attention" />
-          <MetricCard label="Warnings" value={report.summary.warn} supporting="review recommended" />
-          <MetricCard label="Estimated" value={report.summary.estimated} supporting="render-dependent" />
-        </div>
-      </Panel>
-
-      <Panel title="Rule Results" eyebrow="Click rows to edit">
-        <div className="validation-list">
-          {report.results.map((result, index) => {
-            const rule = rules.find((item) => item.id === result.rule_id);
-            return (
-              <article
-                className={`validation-row${selectedRuleId === result.rule_id ? " is-selected" : ""}`}
-                key={validationResultKey(result, index)}
-                onClick={() => onSelectRule(result.rule_id)}
-              >
-                <div>
-                  <Chip tone={statusTone(result.status)}>{result.status}</Chip>
-                  <strong>
-                    <button
-                      aria-current={selectedRuleId === result.rule_id ? "true" : undefined}
-                      className="card-hit"
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onSelectRule(result.rule_id);
-                      }}
-                    >
-                      {rule?.label || result.rule_id}
-                    </button>
-                  </strong>
-                  <small>{validationScopeLabel(result)}</small>
-                </div>
-                <p>{result.message}</p>
-                {rule ? (
-                  <div className="row-actions">
-                    <button type="button" onClick={(event) => {
-                      event.stopPropagation();
-                      onSetRuleStatus(rule.id, "approved");
-                    }}>
-                      Approve
-                    </button>
-                    <button type="button" onClick={(event) => {
-                      event.stopPropagation();
-                      onSetRuleStatus(rule.id, "draft");
-                    }}>
-                      Draft
-                    </button>
-                  </div>
-                ) : null}
-              </article>
-            );
-          })}
-        </div>
-      </Panel>
-    </div>
-  );
-}
-
-function MetricCard({ label, value, supporting }: { label: string; value: number; supporting: string }) {
-  return (
-    <div className="metric-card">
-      <span>{label}</span>
-      <strong>{compactNumber(value)}</strong>
-      <small>{supporting}</small>
-    </div>
-  );
-}
-
-function SurfacePackMap({
-  packs,
-  components,
-  completeness,
-  selectedPackId,
-  onSelectPack,
-}: {
-  packs: SurfacePack[];
-  components: DesignComponent[];
-  completeness: CompletenessLeaf[];
-  selectedPackId: string | null;
-  onSelectPack: (packId: string) => void;
-}) {
-  return (
-    <div className="coverage-matrix" data-surface-pack-coverage-map>
-      {packs.map((pack) => {
-        const coverage = coverageForPack(pack, components, completeness);
-        return (
-          <button
-            className={`coverage-cell${selectedPackId === pack.id ? " is-selected" : ""}`}
-            key={pack.id}
-            type="button"
-            onClick={() => onSelectPack(pack.id)}
-          >
-            <span>{pack.label}</span>
-            <strong>{coverage.percent}%</strong>
-            <Meter value={coverage.percent} label={`${pack.label} coverage`} />
-            <small>{coverage.status}</small>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function RuleHealthLanes({ rules, onSelectRule }: { rules: Rule[]; onSelectRule: (ruleId: string) => void }) {
-  const categories = [...new Set(rules.map((rule) => rule.category))].sort();
-  return (
-    <div className="rule-health-lanes">
-      {categories.map((category) => {
-        const categoryRules = rules.filter((rule) => rule.category === category);
-        const approved = categoryRules.filter((rule) => rule.status === "approved").length;
-        const draft = categoryRules.filter((rule) => rule.status === "draft").length;
-        return (
-          <section className="rule-lane" key={category}>
-            <header>
-              <strong>{category}</strong>
-              <span>{categoryRules.length}</span>
-            </header>
-            <div className="lane-summary-row">
-              <Chip tone="good">{approved} approved</Chip>
-              <Chip tone="warn">{draft} draft</Chip>
-            </div>
-            <Disclosure title="Rules">
-              <div className="rule-lane-list">
-                {categoryRules.map((rule) => (
-                  <button key={rule.id} type="button" onClick={() => onSelectRule(rule.id)}>
-                    <span className={`status-dot status-${rule.status}`} />
-                    {rule.label || rule.id}
-                  </button>
-                ))}
-              </div>
-            </Disclosure>
-          </section>
-        );
-      })}
-    </div>
-  );
-}
-
-function BrandPreview({ brand }: { brand: Brand }) {
-  const colors = brand.tokens.colors;
-  return (
-    <div className="brand-preview" style={{ background: colors.background, color: colors.text }}>
-      <header>
-        <span style={{ background: colors.accent }} />
-        <strong>{brand.tokens.logo.wordmark}</strong>
-      </header>
-      <section>
-        <h3>Generated Surface</h3>
-        <p>Cards, rules, charts, and copy inherit the same tokens.</p>
-      </section>
-      <div className="preview-cards">
-        <span style={{ background: colors.surface, borderColor: colors.border }}>Deck</span>
-        <span style={{ background: colors.surface, borderColor: colors.border }}>Report</span>
-        <span style={{ background: colors.surface, borderColor: colors.border }}>Dash</span>
-      </div>
-    </div>
-  );
-}
-
-function SurfacePackCard({
-  pack,
-  components,
-  completeness,
-  selected,
-  onSelect,
-}: {
-  pack: SurfacePack;
-  components: DesignComponent[];
-  completeness: CompletenessLeaf[];
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  const coverage = coverageForPack(pack, components, completeness);
-  return (
-    <article className={`surface-pack-card${selected ? " is-selected" : ""}`} onClick={onSelect}>
-      <header>
-        <div>
-          <Chip tone={statusTone(coverage.status)}>{coverage.status}</Chip>
-          <h3>
-            <button
-              aria-current={selected ? "true" : undefined}
-              className="card-hit"
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onSelect();
-              }}
-            >
-              {pack.label}
-            </button>
-          </h3>
-        </div>
-        <strong>{coverage.percent}%</strong>
-      </header>
-      <p className="card-summary">{pack.description}</p>
-      <Meter value={coverage.percent} label={`${pack.label} coverage`} />
-      <div className="card-stat-row">
-        <span>
-          <strong>{pack.surfaces.length}</strong>
-          surfaces
-        </span>
-        <span>
-          <strong>{pack.outputs?.length ?? 0}</strong>
-          outputs
-        </span>
-      </div>
-      <Disclosure title="Surface details">
-        <div className="chip-row">
-          {pack.surfaces.map((surface) => (
-            <Chip key={surface}>{surface}</Chip>
-          ))}
-        </div>
-      </Disclosure>
-    </article>
-  );
-}
-
-function OutputCard({
-  output,
-  artifacts,
-  report,
-  version,
-}: {
-  output: DesignOutput;
-  artifacts: Artifacts;
-  report: ValidationReport;
-  version: number;
-}) {
-  const href = artifactUrl(output, artifacts);
-  const failing = output.status === "available" ? report.summary.failed : 0;
-  const previewable = Boolean(href) && href!.endsWith(".html");
-  return (
-    <article className="output-card">
-      <header>
-        <FileOutput size={16} />
-        <Chip tone={failing ? "warn" : statusTone(output.status)}>{output.status}</Chip>
-      </header>
-      <h3>{output.label}</h3>
-      <p className="card-summary">{output.description}</p>
-      {previewable ? (
-        <div className="output-thumb" inert>
-          <iframe
-            loading="lazy"
-            src={`${href}?v=${version}`}
-            tabIndex={-1}
-            title={`${output.label} preview`}
-          />
-        </div>
-      ) : null}
-      {failing ? (
-        <span className="output-warning">
-          <AlertTriangle size={16} />
-          {failing === 1 ? "1 check failing" : `${failing} checks failing`}
-        </span>
-      ) : null}
-      {href ? (
-        <a href={href} target="_blank" rel="noreferrer">
-          Open full size
-          <ArrowUpRight size={16} />
-        </a>
-      ) : (
-        <span className="planned-output">
-          <ShieldCheck size={16} />
-          Planned — not generated yet
-        </span>
-      )}
-    </article>
   );
 }

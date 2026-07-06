@@ -3,9 +3,13 @@ import type {
   BrandMetadata,
   BrandPayload,
   CompletionSummary,
+  Creation,
+  CreationMeta,
+  CreationPayload,
   JsonPatchOp,
   ProviderStatus,
   SourceRecord,
+  TemplateLibrary,
 } from "./types";
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -123,4 +127,50 @@ export function applyPatch(slug: string, patch: JsonPatchOp[], summary: string):
 
 export function undo(slug: string): Promise<BrandPayload> {
   return requestJson(`/api/brands/${slug}/undo`, { method: "POST" });
+}
+
+export function getTemplates(): Promise<TemplateLibrary> {
+  return requestJson("/api/templates");
+}
+
+export function listCreations(slug: string): Promise<{ creations: CreationMeta[] }> {
+  return requestJson(`/api/brands/${slug}/creations`);
+}
+
+export function createCreation(
+  slug: string,
+  name: string,
+  templateId: string,
+  pasteText: string,
+): Promise<CreationPayload> {
+  return requestJson(`/api/brands/${slug}/creations`, {
+    method: "POST",
+    body: JSON.stringify({ name, template_id: templateId, paste_text: pasteText }),
+  });
+}
+
+export function getCreation(slug: string, creationId: string): Promise<CreationPayload> {
+  return requestJson(`/api/brands/${slug}/creations/${encodeURIComponent(creationId)}`);
+}
+
+export function saveCreation(slug: string, creation: Creation): Promise<CreationPayload> {
+  return requestJson(`/api/brands/${slug}/creations/${encodeURIComponent(creation.id)}`, {
+    method: "PUT",
+    body: JSON.stringify({ creation }),
+  });
+}
+
+export function deleteCreation(slug: string, creationId: string): Promise<{ creations: CreationMeta[] }> {
+  return requestJson(`/api/brands/${slug}/creations/${encodeURIComponent(creationId)}`, { method: "DELETE" });
+}
+
+export function undoCreation(slug: string, creationId: string): Promise<CreationPayload> {
+  return requestJson(`/api/brands/${slug}/creations/${encodeURIComponent(creationId)}/undo`, { method: "POST" });
+}
+
+export function exportCreation(slug: string, creationId: string): Promise<{ url: string }> {
+  return requestJson(`/api/brands/${slug}/creations/${encodeURIComponent(creationId)}/export`, {
+    method: "POST",
+    body: JSON.stringify({ format: "pptx" }),
+  });
 }
