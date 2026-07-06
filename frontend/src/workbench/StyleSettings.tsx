@@ -22,6 +22,12 @@ type StyleSettingsProps = {
 };
 
 const PLACEMENT_CHOICES = ["top-left", "top-right", "bottom-left", "bottom-right"];
+const PLACEMENT_LABELS: Record<string, string> = {
+  "top-left": "Top left",
+  "top-right": "Top right",
+  "bottom-left": "Bottom left",
+  "bottom-right": "Bottom right",
+};
 const ROLE_HELP: Record<string, string> = {
   background: "the page behind everything",
   surface: "cards and panels",
@@ -152,6 +158,7 @@ export function StyleSettings({
           />
           <ChoiceChips
             label="Where the logo sits"
+            optionLabels={PLACEMENT_LABELS}
             options={PLACEMENT_CHOICES}
             value={brand.tokens.logo.placement}
             onChange={(value) => onUpdateToken(["logo", "placement"], value)}
